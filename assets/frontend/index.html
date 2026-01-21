@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8' />
+    <title>Video Workflow Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        header { margin-bottom: 20px; }
+        form label { display: block; margin-top: 10px; }
+        textarea { width: 100%; min-height: 60px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; }
+        th { background: #f5f5f5; }
+        .actions { margin-top: 20px; }
+        .status { margin-top: 10px; color: #0a7; }
+        .error { color: #c00; }
+        .project-meta { margin-top: 15px; padding: 10px; background: #f0f0f0; }
+        input[type='text'], input[type='number'] { width: 100%; padding: 6px; }
+        button { padding: 8px 14px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Video Workflow</h1>
+    <p>1) Configure theme and global options ? generate script + prompts; 2) produce storyboard images; 3) save edits and trigger rendering.</p>
+</header>
+<section>
+    <h2>Create Project</h2>
+    <form id='projectForm'>
+        <label>Theme <input type='text' name='theme' required /></label>
+        <label>Story tone <input type='text' name='style' value='Warm and rational' /></label>
+        <label>Scene count <input type='number' name='scene_count' min='1' max='30' value='8' /></label>
+        <label>Aspect ratio <input type='text' name='aspect_ratio' value='16:9' /></label>
+        <label>Image style hint <input type='text' name='image_style' value='cinematic realism' /></label>
+        <label>Negative prompt <input type='text' name='negative_prompt' value='low quality, blurry' /></label>
+        <label>MiniMax voice_id <input type='text' name='voice_id' placeholder='optional' /></label>
+        <label>Speech speed <input type='number' step='0.1' name='voice_speed' placeholder='optional' /></label>
+        <div class='actions'>
+            <button type='submit'>Generate storyboard</button>
+            <button type='button' id='loadProject'>Load project</button>
+            <input type='number' id='loadProjectId' placeholder='Project ID' />
+        </div>
+    </form>
+    <div id='formStatus' class='status'></div>
+</section>
+<section id='projectSection' style='display:none;'>
+    <div class='project-meta' id='projectMeta'></div>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Narration</th>
+                <th>Image prompt</th>
+                <th>Negative prompt</th>
+                <th>Image path</th>
+            </tr>
+        </thead>
+        <tbody id='shotsBody'></tbody>
+    </table>
+    <div class='actions'>
+        <button id='saveShots'>Save shots</button>
+        <button id='confirmProject'>Confirm & render</button>
+    </div>
+    <div id='projectStatus' class='status'></div>
+</section>
+<script>
+let currentProject = null;
+function renderProject(project) {
+    currentProject = project;
+    document.getElementById('projectSection').style.display = 'block';
+    const meta = ID:  | status: <br> +
+        udio:  | video: ;
+    document.getElementById('projectMeta').innerHTML = meta;
+    const tbody = document.getElementById('shotsBody');
+    tbody.innerHTML = '';
+    (project.shots || []).forEach((shot) => {
+        const row = document.createElement('tr');
+        row.innerHTML = 
+            <td></td>
+            <td><textarea data-field='script_text' data-id=''></textarea></td>
+            <td><textarea data-field='image_prompt' data-id=''></textarea></td>
+            <td><textarea data-field='negative_prompt' data-id=''></textarea></td>
+            <td><input type='text' data-field='image_path' data-id='' value='' /></td>;
+        tbody.appendChild(row);
+    });
+}
+async function createProject(payload) {
+    const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+async function fetchProject(id) {
+    const res = await fetch(/api/projects/);
+    if (!res.ok) throw new Error('project not found');
+    return res.json();
+}
+async function updateShots(projectId, shots) {
+    const res = await fetch(/api/projects//shots, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shots }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+async function confirmProject(projectId) {
+    const res = await fetch(/api/projects//confirm, { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+document.getElementById('projectForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const payload = {
+        theme: form.theme.value,
+        style: form.style.value,
+        scene_count: Number(form.scene_count.value),
+        aspect_ratio: form.aspect_ratio.value,
+        image_style: form.image_style.value,
+        negative_prompt: form.negative_prompt.value,
+    };
+    if (form.voice_id.value) payload.voice_setting = { voice_id: form.voice_id.value };
+    if (form.voice_speed.value) {
+        payload.voice_setting = payload.voice_setting || {};
+        payload.voice_setting.speed = Number(form.voice_speed.value);
+    }
+    const status = document.getElementById('formStatus');
+    status.textContent = 'Generating...';
+    status.classList.remove('error');
+    try {
+        const project = await createProject(payload);
+        renderProject(project);
+        status.textContent = 'Storyboard ready. Fine-tune shots below.';
+    } catch (err) {
+        status.textContent = err.message;
+        status.classList.add('error');
+    }
+});
+setTimeout(() => {
+    document.getElementById('loadProject').addEventListener('click', async () => {
+        const id = document.getElementById('loadProjectId').value;
+        if (!id) return;
+        const status = document.getElementById('formStatus');
+        status.textContent = 'Loading project...';
+        status.classList.remove('error');
+        try {
+            const project = await fetchProject(id);
+            renderProject(project);
+            status.textContent = 'Project loaded.';
+        } catch (err) {
+            status.textContent = err.message;
+            status.classList.add('error');
+        }
+    });
+    document.getElementById('saveShots').addEventListener('click', async () => {
+        if (!currentProject) return;
+        const inputs = document.querySelectorAll('#shotsBody textarea, #shotsBody input');
+        const grouped = {};
+        inputs.forEach((input) => {
+            const id = input.dataset.id;
+            grouped[id] = grouped[id] || { id: Number(id) };
+            grouped[id][input.dataset.field] = input.value;
+        });
+        const payload = Object.values(grouped);
+        const status = document.getElementById('projectStatus');
+        status.textContent = 'Saving shots...';
+        status.classList.remove('error');
+        try {
+            const project = await updateShots(currentProject.id, payload);
+            renderProject(project);
+            status.textContent = 'Saved.';
+        } catch (err) {
+            status.textContent = err.message;
+            status.classList.add('error');
+        }
+    });
+    document.getElementById('confirmProject').addEventListener('click', async () => {
+        if (!currentProject) return;
+        const status = document.getElementById('projectStatus');
+        status.textContent = 'Rendering...';
+        status.classList.remove('error');
+        try {
+            const project = await confirmProject(currentProject.id);
+            renderProject(project);
+            status.textContent = 'Render finished.';
+        } catch (err) {
+            status.textContent = err.message;
+            status.classList.add('error');
+        }
+    });
+}, 0);
+</script>
+</body>
+</html>
