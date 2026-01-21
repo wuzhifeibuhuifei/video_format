@@ -33,7 +33,7 @@ max_duration = 15.0
 transition_duration = 0.5
 
 # 字幕整体延迟（秒），正值表示字幕整体向后延迟
-subtitle_delay = 0.2
+subtitle_delay = 0
 
 [video_effects]
 # 是否启用镜头动态效果（Ken Burns 效果）

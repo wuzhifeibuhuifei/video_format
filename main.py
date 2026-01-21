@@ -3,10 +3,12 @@
 
 import argparse
 import json
+import logging
 import os
 import random
 import re
 import http.client
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -31,6 +33,53 @@ from database import ProjectDatabase, ShotRecord
 from generation import StoryboardGenerator
 from minimax_speech import MiniMaxSpeechClient
 from comfyui_client import ComfyUIClient
+
+# ============== 日志配置 ==============
+def setup_logging() -> logging.Logger:
+    """配置并返回日志记录器"""
+    log_dir = Path(__file__).parent / 'logs'
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    # 生成日志文件名（带时间戳）
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_file = log_dir / f'video_gen_{timestamp}.log'
+
+    # 配置日志格式
+    log_format = '[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s'
+    date_format = '%Y-%m-%d %H:%M:%S'
+
+    # 创建 logger
+    logger = logging.getLogger('VideoGen')
+    logger.setLevel(logging.DEBUG)
+
+    # 避免重复添加 handler
+    if logger.handlers:
+        return logger
+
+    # 文件 handler（记录所有级别）
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG)
+    file_formatter = logging.Formatter(log_format, datefmt=date_format)
+    file_handler.setFormatter(file_formatter)
+
+    # 控制台 handler（只记录 INFO 及以上）
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_formatter = logging.Formatter(
+        fmt='[%(levelname)s] %(message)s',
+        datefmt='%H:%M:%S'
+    )
+    console_handler.setFormatter(console_formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
+    logger.info(f'日志文件: {log_file}')
+    return logger
+
+
+# 初始化日志
+logger = setup_logging()
 
 CONFIG_PATH = Path(__file__).parent / 'config.toml'
 config = toml.load(CONFIG_PATH)
@@ -163,13 +212,19 @@ def get_transcript_with_timestamps(
     language: str = 'zh',
     force_refresh: bool = False,
 ) -> List[dict]:
+    """从音频文件中获取带时间戳的转录文本"""
+    logger.info(f'开始获取音频时间戳: {audio_path}')
+    logger.debug(f'参数: language={language}, force_refresh={force_refresh}')
+
     converter = opencc.OpenCC('t2s')
     audio_filename = Path(audio_path).stem
     subtitles_dir = Path(__file__).parent / 'assets' / 'subtitles'
     subtitles_dir.mkdir(parents=True, exist_ok=True)
     json_file_path = subtitles_dir / f'{audio_filename}_detail.json'
+    logger.debug(f'缓存文件路径: {json_file_path}')
 
     if json_file_path.exists() and not force_refresh:
+        logger.debug(f'找到缓存文件，尝试加载...')
         try:
             with open(json_file_path, 'r', encoding='utf-8') as fh:
                 cached = json.load(fh)
@@ -187,10 +242,13 @@ def get_transcript_with_timestamps(
                                 'end': int(word.get('end_time', 0)) / 1000,
                             }
                         )
+                logger.info(f'从缓存加载成功，共 {len(segments)} 个词')
                 return segments
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f'缓存加载失败: {e}')
 
+    # 缓存未命中，调用阿里云 ASR API
+    logger.info(f'缓存未命中，调用阿里云 ASR API...')
     asr_config = config.get('aliyun_asr', {})
     appkey = asr_config.get('appkey')
     token = asr_config.get('token')
@@ -204,6 +262,7 @@ def get_transcript_with_timestamps(
         'cn-shenzhen': 'nls-gateway-cn-shenzhen.aliyuncs.com',
     }
     host = region_map.get(region, region_map['cn-shanghai'])
+    logger.debug(f'ASR region: {region}, host: {host}')
 
     ext = os.path.splitext(audio_path)[1].upper().lstrip('.')
     supported = {'MP4', 'AAC', 'MP3', 'OPUS', 'WAV'}
@@ -224,12 +283,14 @@ def get_transcript_with_timestamps(
 
     with open(audio_path, "rb") as f:
         audio_content = f.read()
+    logger.debug(f'音频文件大小: {len(audio_content)} bytes')
 
     headers = {
         "Content-Type": "application/octet-stream",
         "Content-Length": str(len(audio_content)),
     }
 
+    logger.info(f'正在发送请求到阿里云 ASR...')
     conn = http.client.HTTPSConnection(host)
     conn.request('POST', request_url, audio_content, headers)
     response = conn.getresponse()
@@ -237,11 +298,15 @@ def get_transcript_with_timestamps(
     conn.close()
     result = json.loads(data)
 
+    logger.debug(f'ASR 响应状态: {result.get("status")}')
     if result.get('status') != 20000000:
+        logger.error(f'ASR 失败: {result.get("message")}')
         raise ValueError(f"ASR failed: {result.get('message')}")
 
+    # 保存缓存
     with open(json_file_path, 'w', encoding='utf-8') as fh:
         json.dump(result, fh, ensure_ascii=False, indent=2)
+    logger.info(f'ASR 结果已缓存到: {json_file_path}')
 
     flash_result = result.get('flash_result', {})
     sentences = flash_result.get('sentences', [])
@@ -256,21 +321,37 @@ def get_transcript_with_timestamps(
                     'end': int(word.get('end_time', 0)) / 1000,
                 }
             )
+    logger.info(f'ASR 完成，共识别 {len(segments)} 个词')
     return segments
 
 
 def find_timestamps_with_ai(script_lines: List[str], word_segments: List[dict]) -> List[dict]:
+    """使用 AI 语义匹配将脚本与时间戳对齐"""
+    logger.info(f'开始 AI 语义匹配，脚本数量: {len(script_lines)}, 词段数量: {len(word_segments)}')
+
+    # 完整文本（所有词段拼接）
+    complete_text = ''.join(seg['text'] for seg in word_segments)
+
+    # 带时间戳的词段流
     timestamp_flow = ''.join(
         f"[{seg['start']:.2f}s-{seg['end']:.2f}s] {seg['text']}\\n" for seg in word_segments
     )
+    # 分镜脚本
     script_text = '\\n'.join(f"{idx + 1}. {line}" for idx, line in enumerate(script_lines))
 
     prompt = (
-        "You align narration sentences with token-level timestamps.\\n\\n"
-        f"Word-level stream:\\n{timestamp_flow}\\n\\n"
-        f"Storyboard:\\n{script_text}\\n\\n"
-        "Return JSON array with fields id, text, start, end, duration."
+        "你是一个音频对齐引擎。任务：将分镜脚本与音频时间戳进行语义匹配。\\n\\n"
+        f"【完整音频转录文本】\\n{complete_text}\\n\\n"
+        f"【词级时间戳流】\\n{timestamp_flow}\\n\\n"
+        f"【需要匹配的分镜脚本】\\n{script_text}\\n\\n"
+        "要求：分析完整转录文本和分镜脚本的语义对应关系，结合词级时间戳，为每个分镜脚本确定准确的开始和结束时间。\\n\\n"
+        "必须返回纯 JSON 数组格式，不要包含任何其他文字说明：\\n"
+        "[\\n"
+        "  {\\\"id\\\": 1, \\\"text\\\": \\\"第一句脚本\\\", \\\"start\\\": 0.0, \\\"end\\\": 5.2, \\\"duration\\\": 5.2},\\n"
+        "  {\\\"id\\\": 2, \\\"text\\\": \\\"第二句脚本\\\", \\\"start\\\": 5.2, \\\"end\\\": 10.5, \\\"duration\\\": 5.3}\\n"
+        "]"
     )
+    logger.debug(f'完整文本长度: {len(complete_text)} 字符')
 
     volc_cfg = config.get('volcengine', {})
     api_url = volc_cfg.get('api_url')
@@ -279,6 +360,7 @@ def find_timestamps_with_ai(script_lines: List[str], word_segments: List[dict]) 
     if not api_url or not api_key or not model:
         raise ValueError('Volcengine config is missing')
 
+    logger.debug(f'使用模型: {model}')
     headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
     payload = {
         'model': model,
@@ -286,27 +368,54 @@ def find_timestamps_with_ai(script_lines: List[str], word_segments: List[dict]) 
         'temperature': 0.3,
     }
 
+    logger.info(f'正在调用 LLM API 进行语义匹配...')
     with httpx.Client(timeout=120.0) as client:
         resp = client.post(api_url, json=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
 
     content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+    logger.debug(f'LLM 原始响应类型: {type(content)}')
+
+    # 处理不同类型的内容响应
     if isinstance(content, list):
         content = '\\n'.join(part.get('text', '') for part in content if isinstance(part, dict))
-    content = content.strip()
-    if content.startswith('```'):
-        content = content.strip('`\\n')
 
-    return json.loads(content)
+    content = content.strip()
+    logger.debug(f'LLM 响应内容（前500字符）: {content[:500]}...')
+
+    # 尝试提取 JSON
+    json_start = content.find('[')
+    json_end = content.rfind(']') + 1
+
+    if json_start >= 0 and json_end > json_start:
+        json_content = content[json_start:json_end]
+        logger.debug(f'提取的 JSON: {json_content[:200]}...')
+        try:
+            result = json.loads(json_content)
+            logger.info(f'AI 匹配完成，返回 {len(result)} 条结果')
+            return result
+        except json.JSONDecodeError as e:
+            logger.error(f'JSON 解析失败: {e}')
+            logger.error(f'尝试解析的内容: {json_content}')
+            raise
+    else:
+        logger.error(f'响应中未找到有效的 JSON 数组')
+        logger.error(f'完整响应内容: {content}')
+        raise ValueError(f'LLM 返回的内容不是有效的 JSON 格式')
 
 
 def calculate_scene_durations(audio_path: str, script_lines: List[str]) -> List[float]:
+    """计算每个场景的时长"""
+    logger.info(f'开始计算场景时长，脚本数量: {len(script_lines)}')
+
     timing_config = config.get('timing', {})
     min_duration = timing_config.get('min_duration', 2.0)
     max_duration = timing_config.get('max_duration', 15.0)
     base_duration = timing_config.get('base_duration', 3.0)
     chars_per_second = timing_config.get('chars_per_second', 0.25)
+
+    logger.debug(f'时长配置: min={min_duration}s, max={max_duration}s, base={base_duration}s')
 
     try:
         word_segments = get_transcript_with_timestamps(audio_path)
@@ -316,10 +425,11 @@ def calculate_scene_durations(audio_path: str, script_lines: List[str]) -> List[
         for result in timestamp_results:
             duration = max(min_duration, min(max_duration, result.get('duration', 0)))
             durations.append(duration)
+        logger.info(f'使用 AI 匹配计算时长: {durations}')
         return durations
     except Exception as e:
-        print(f'[WARNING] ASR/AI matching failed: {e}')
-        print('[INFO] Using fallback duration calculation based on text length')
+        logger.warning(f'ASR/AI matching failed: {e}')
+        logger.info('使用备选方案：基于字符数计算时长')
         # 备选方案：基于字符数计算时长
         durations = []
         for line in script_lines:
@@ -328,6 +438,7 @@ def calculate_scene_durations(audio_path: str, script_lines: List[str]) -> List[
             duration = base_duration + (char_count * chars_per_second)
             duration = max(min_duration, min(max_duration, duration))
             durations.append(duration)
+        logger.info(f'备选方案计算时长: {durations}')
         return durations
 
 
@@ -343,16 +454,66 @@ def create_video_from_scenes(
     subtitle_stroke_width: int = 6,
     subtitle_bg_color: Optional[str] = None,
     subtitle_bg_opacity: float = 0.5,
+    test_mode: bool = False,
+    test_duration: float = 10.0,
 ) -> None:
+    """
+    从场景创建视频
+
+    Args:
+        test_mode: 测试模式，只生成前 N 秒的视频
+        test_duration: 测试模式下的视频时长（秒）
+    """
+    logger.info(f'开始创建视频: {output_path}')
+    logger.info(f'参数: fps={fps}, resolution={resolution}, test_mode={test_mode}, test_duration={test_duration}')
+    logger.debug(f'脚本数量: {len(script_lines)}, 图片数量: {len(image_paths)}')
+
     if len(script_lines) != len(image_paths):
+        logger.error(f'脚本和图片数量不匹配: {len(script_lines)} vs {len(image_paths)}')
         raise ValueError('Script lines and image count mismatch')
     if not Path(audio_path).exists():
+        logger.error(f'音频文件不存在: {audio_path}')
         raise FileNotFoundError(audio_path)
     for img in image_paths:
         if not Path(img).exists():
             raise FileNotFoundError(img)
 
+    # 测试模式：截取音频和限制场景
+    if test_mode:
+        print(f'[TEST MODE] 只生成前 {test_duration} 秒的视频')
+
+        # 加载音频并截取
+        audio_clip = AudioFileClip(audio_path)
+        if audio_clip.duration > test_duration:
+            audio_clip = audio_clip.subclipped(0, test_duration)
+            # 保存截取后的音频到临时文件
+            test_audio_path = Path(audio_path).parent / f'temp_{Path(audio_path).name}'
+            audio_clip.write_audiofile(str(test_audio_path))
+            audio_path = str(test_audio_path)
+            print(f'[TEST MODE] 音频已截取到 {test_duration} 秒')
+            audio_clip.close()  # 释放资源
+
     scene_durations = calculate_scene_durations(audio_path, script_lines)
+
+    # 测试模式：累计时长，只保留需要的场景
+    if test_mode:
+        total_duration = 0.0
+        included_indices = []
+        for i, duration in enumerate(scene_durations):
+            if total_duration + duration <= test_duration:
+                included_indices.append(i)
+                total_duration += duration
+            else:
+                break
+
+        if not included_indices:
+            included_indices = [0]  # 至少包含第一个场景
+
+        print(f'[TEST MODE] 包含场景: {included_indices} (总时长: {total_duration:.1f}s)')
+        # 截取脚本和图片路径
+        script_lines = [script_lines[i] for i in included_indices]
+        image_paths = [image_paths[i] for i in included_indices]
+        scene_durations = [scene_durations[i] for i in included_indices]
     width, height = resolution
     subtitle_height = int(height * 0.12)
 
@@ -389,26 +550,42 @@ def create_video_from_scenes(
         punctuation = '???,;:????""[]()????<>??,.?!'
         display_text = script_text.rstrip(punctuation) or script_text
 
-        font_path = Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansSC-VariableFont_wght.ttf'
+        # 中文字体配置（按优先级尝试）
+        font_candidates = [
+            Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansSC-VariableFont_wght.ttf',
+            Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansSC-Regular.ttf',
+            Path(__file__).parent / 'assets' / 'fonts' / 'SimHei.ttf',
+            Path('C:/Windows/Fonts/msyh.ttc'),  # 微软雅黑
+            Path('C:/Windows/Fonts/simhei.ttf'),  # 黑体
+        ]
+
         text_clip = None
-        if font_path.exists():
-            try:
-                text_clip = TextClip(
-                    text=display_text,
-                    font_size=subtitle_fontsize,
-                    color='white',
-                    font=f"{str(font_path)}#wght@700",
-                    stroke_color='black',
-                    stroke_width=subtitle_stroke_width,
-                    text_align='center',
-                    method='caption',
-                    size=(int(width * 0.9), int(height * 0.3)),
-                    margin=(20, 20),
-                    bg_color=subtitle_bg_color,
-                )
-            except Exception:
-                pass
+        for font_path in font_candidates:
+            if font_path.exists():
+                try:
+                    # 直接使用字体路径，不使用变量字体语法
+                    text_clip = TextClip(
+                        text=display_text,
+                        font_size=subtitle_fontsize,
+                        color='white',
+                        font=str(font_path),
+                        stroke_color='black',
+                        stroke_width=subtitle_stroke_width,
+                        text_align='center',
+                        method='caption',
+                        size=(int(width * 0.9), int(height * 0.3)),
+                        margin=(20, 20),
+                        bg_color=subtitle_bg_color,
+                    )
+                    break  # 成功创建，退出循环
+                except Exception as e:
+                    print(f'[WARN] 字体加载失败 {font_path.name}: {e}')
+                    continue
+
+        # 如果所有字体都失败，使用系统默认
         if text_clip is None:
+            logger.warning('所有中文字体加载失败，使用系统默认字体（可能出现乱码）')
+            print('[WARN] 所有中文字体加载失败，使用系统默认字体（可能出现乱码）')
             text_clip = TextClip(
                 text=display_text,
                 font_size=subtitle_fontsize,
@@ -422,9 +599,13 @@ def create_video_from_scenes(
                 bg_color=subtitle_bg_color,
             )
 
-        text_clip = text_clip.with_position(text_position).with_duration(duration)
+        # 应用字幕延迟（字幕整体向后延迟）
+        subtitle_delay = config.get('timing', {}).get('subtitle_delay', 0.0)
+        text_clip = text_clip.with_position(text_position).with_start(subtitle_delay).with_duration(duration)
         composite_clip = CompositeVideoClip([image_clip, text_clip])
         video_clips.append(composite_clip)
+
+    logger.info(f'创建了 {len(video_clips)} 个视频片段')
 
     transition_duration = config.get('timing', {}).get('transition_duration', 0.8)
     clips_with_transitions = []
@@ -450,6 +631,7 @@ def create_video_from_scenes(
 
     audio_effects = config.get('audio_effects', {})
     if audio_effects.get('enable_bgm'):
+        logger.info(f'添加背景音乐...')
         bgm_audio = create_bgm_audio(
             bgm_path=audio_effects.get('bgm_path', 'assets/audio/background_music.mp3'),
             duration=audio_clip.duration,
@@ -460,8 +642,12 @@ def create_video_from_scenes(
         )
         if bgm_audio is not None:
             audio_clip = CompositeAudioClip([audio_clip, bgm_audio])
+            logger.info('背景音乐添加成功')
 
     final_video = final_video.with_audio(audio_clip)
+
+    logger.info(f'开始写入视频文件: {output_path}')
+    logger.info(f'视频总时长: {final_video.duration:.2f} 秒')
     final_video.write_videofile(
         output_path,
         fps=fps,
@@ -470,6 +656,8 @@ def create_video_from_scenes(
         preset='medium',
         threads=4,
     )
+    logger.info(f'视频写入完成: {output_path}')
+
     final_video.close()
     audio_clip.close()
     for clip in video_clips:
@@ -624,21 +812,39 @@ class VideoProjectWorkflow:
             )
         return self.get_project(project_id)
 
-    def finalize_project(self, project_id: int) -> Dict[str, Any]:
+    def finalize_project(
+        self,
+        project_id: int,
+        test_mode: bool = False,
+        test_duration: float = 10.0,
+    ) -> Dict[str, Any]:
+        """
+        Finalize and render a project.
+
+        Args:
+            project_id: Project ID to render
+            test_mode: If True, only generate first N seconds of video and reuse existing audio
+            test_duration: Duration of test video in seconds (default: 10.0)
+        """
+        logger.info(f'开始渲染项目 #{project_id} (test_mode={test_mode}, test_duration={test_duration}s)')
         project = self.get_project(project_id)
         shots = project.get('shots', [])
         if not shots:
+            logger.error(f'项目 #{project_id} 没有分镜')
             raise ValueError('Project has no shots')
+        logger.info(f'项目分镜数量: {len(shots)}')
 
         image_paths = [shot['image_path'] for shot in shots]
         missing = [path for path in image_paths if not Path(path).exists()]
         if missing and self.comfy_client and self.auto_image_default:
+            logger.info(f'自动生成缺失的分镜图片: {len(missing)} 个')
             print('[ComfyUI] auto-generating missing storyboard images')
             project = self.generate_images_for_project(project_id, missing_only=True)
             shots = project.get('shots', [])
             image_paths = [shot['image_path'] for shot in shots]
             missing = [path for path in image_paths if not Path(path).exists()]
         if missing:
+            logger.error(f'缺少分镜图片: {missing}')
             raise FileNotFoundError('Missing storyboard images\n' + '\n'.join(missing))
 
         script_lines = [shot['script_text'] for shot in shots]
@@ -654,17 +860,38 @@ class VideoProjectWorkflow:
         audio_path = self.audio_root / f'project_{project_id}.{audio_ext}'
         video_path = self.video_root / f'project_{project_id}.mp4'
 
+        # 测试模式：复用已存在的音频文件
+        if test_mode and audio_path.exists():
+            logger.info(f'[TEST MODE] 复用已有音频: {audio_path}')
+            print(f'[TEST MODE] 复用已有音频: {audio_path}')
+        else:
+            # 正常模式或测试模式但音频不存在：生成音频
+            if test_mode:
+                logger.info('[TEST MODE] 音频文件不存在，生成新音频...')
+                print(f'[TEST MODE] 音频文件不存在，生成新音频...')
+            logger.info(f'开始合成语音（TTS）...')
+            self.db.update_project(project_id, status='processing')
+            try:
+                narrative_text = '\n'.join(script_lines)
+                logger.debug(f'脚本文本长度: {len(narrative_text)} 字符')
+                self.tts_client.synthesize(
+                    text=narrative_text,
+                    output_path=audio_path,
+                    voice_setting=voice_setting,
+                    audio_setting=audio_setting,
+                    extra_options=extra_options or None,
+                )
+                logger.info(f'语音合成完成: {audio_path}')
+            except Exception:
+                logger.exception(f'语音合成失败')
+                self.db.update_project(project_id, status='failed')
+                raise
+
+        # 生成视频
         self.db.update_project(project_id, status='processing')
         try:
-            narrative_text = '\n'.join(script_lines)
-            self.tts_client.synthesize(
-                text=narrative_text,
-                output_path=audio_path,
-                voice_setting=voice_setting,
-                audio_setting=audio_setting,
-                extra_options=extra_options or None,
-            )
             resolution = get_resolution_from_config(project.get('aspect_ratio', DEFAULT_ASPECT_RATIO))
+            logger.info(f'分辨率: {resolution}')
             create_video_from_scenes(
                 audio_path=str(audio_path),
                 script_lines=script_lines,
@@ -672,6 +899,8 @@ class VideoProjectWorkflow:
                 output_path=str(video_path),
                 fps=24,
                 resolution=resolution,
+                test_mode=test_mode,
+                test_duration=test_duration,
             )
             self.db.update_project(
                 project_id,
@@ -679,7 +908,9 @@ class VideoProjectWorkflow:
                 audio_path=str(audio_path),
                 video_path=str(video_path),
             )
+            logger.info(f'项目 #{project_id} 渲染完成!')
         except Exception:
+            logger.exception(f'项目 #{project_id} 渲染失败')
             self.db.update_project(project_id, status='failed')
             raise
         return self.get_project(project_id)
@@ -791,6 +1022,11 @@ def api_confirm_project(project_id: int):
 
 
 def main():
+    """CLI 主入口"""
+    logger.info('=' * 50)
+    logger.info('视频生成工具启动')
+    logger.info('=' * 50)
+
     parser = argparse.ArgumentParser(description='Video generation workflow CLI')
     parser.add_argument('--theme', help='Video theme', required=False)
     parser.add_argument('--style', help='Narration tone', default=DEFAULT_STORY_TONE)
@@ -803,7 +1039,11 @@ def main():
     parser.add_argument('--auto-confirm', action='store_true', help='Auto render without prompt')
     parser.add_argument('--auto-images', action='store_true', help='Use ComfyUI to auto-generate storyboard images')
     parser.add_argument('--project-id', type=int, help='Render existing project')
+    parser.add_argument('--test', action='store_true', help='Test mode: only generate first N seconds of video and reuse existing audio')
+    parser.add_argument('--test-duration', type=float, default=10.0, help='Test mode video duration in seconds (default: 10.0)')
     args = parser.parse_args()
+
+    logger.debug(f'CLI 参数: {vars(args)}')
 
     workflow = get_workflow()
 
@@ -811,7 +1051,13 @@ def main():
         parser.error('--project-id and --theme are mutually exclusive')
 
     if args.project_id:
-        project = workflow.finalize_project(args.project_id)
+        logger.info(f'渲染现有项目 #{args.project_id}')
+        project = workflow.finalize_project(
+            args.project_id,
+            test_mode=args.test,
+            test_duration=args.test_duration,
+        )
+        logger.info(f"项目 #{project['id']} 渲染完成 -> {project.get('video_path')}")
         print(f"Rendered project #{project['id']} -> {project.get('video_path')}")
         return
 
@@ -824,6 +1070,7 @@ def main():
     if args.voice_speed is not None:
         voice_override['speed'] = args.voice_speed
 
+    logger.info(f'创建新项目: theme={args.theme}, scene_count={args.scene_count}')
     project = workflow.create_project(
         theme=args.theme,
         style=args.style,
@@ -834,13 +1081,17 @@ def main():
         voice_setting=voice_override or None,
         audio_setting=None,
     )
+    logger.info(f'项目 #{project["id"]} 创建成功')
 
     if args.auto_images:
         if not workflow.comfy_client or not workflow.comfy_client.can_use():
+            logger.warning('ComfyUI 未配置，无法自动生成图片')
             print('[WARN] ComfyUI 未配置，无法自动生成图片。')
         else:
+            logger.info('使用 ComfyUI 为所有分镜生成图片...')
             print('[ComfyUI] 正在为所有分镜生成图片...')
             project = workflow.generate_images_for_project(project['id'], missing_only=False)
+            logger.info(f'图片生成完成')
 
     print(f"Created project #{project['id']} in draft status")
     print('Planned image paths:')
@@ -855,15 +1106,20 @@ def main():
         confirm = input('Proceed with rendering? (y/N): ').strip().lower() == 'y'
 
     if not confirm:
+        logger.info('用户取消渲染，退出')
         print(f"Run python main.py --project-id {project['id']} after you have assets ready.")
         return
 
     # Auto-generate missing images before rendering (if ComfyUI is configured)
     if workflow.comfy_client and workflow.comfy_client.can_use():
+        logger.info('检查并生成缺失的分镜图片...')
         print('[ComfyUI] 正在检查并生成缺失的分镜图片...')
         project = workflow.generate_images_for_project(project['id'], missing_only=True)
 
+    logger.info(f'开始渲染项目 #{project["id"]}')
     final_project = workflow.finalize_project(project['id'])
+    logger.info(f'项目渲染完成! 音频: {final_project.get("audio_path")}, 视频: {final_project.get("video_path")}')
+    logger.info('=' * 50)
     print(f"Completed! Audio: {final_project.get('audio_path')} Video: {final_project.get('video_path')}")
 
 
