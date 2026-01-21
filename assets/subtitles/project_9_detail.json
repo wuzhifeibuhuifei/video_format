@@ -1,0 +1,765 @@
+{
+  "task_id": "2ef9e4af21384972b02ef6ab7d642018",
+  "result": "",
+  "status": 20000000,
+  "message": "SUCCESS",
+  "flash_result": {
+    "duration": 40879,
+    "completed": true,
+    "sentences": [
+      {
+        "text": "凌晨五点，",
+        "words": [
+          {
+            "text": "凌晨",
+            "begin_time": "220",
+            "end_time": "560",
+            "punc": ""
+          },
+          {
+            "text": "五点",
+            "begin_time": "560",
+            "end_time": "1090",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 220,
+        "end_time": 1090,
+        "channel_id": 0
+      },
+      {
+        "text": "城市还没完全醒来，",
+        "words": [
+          {
+            "text": "城市",
+            "begin_time": "1350",
+            "end_time": "1870",
+            "punc": ""
+          },
+          {
+            "text": "还",
+            "begin_time": "1870",
+            "end_time": "2020",
+            "punc": ""
+          },
+          {
+            "text": "没",
+            "begin_time": "2020",
+            "end_time": "2120",
+            "punc": ""
+          },
+          {
+            "text": "完全",
+            "begin_time": "2120",
+            "end_time": "2430",
+            "punc": ""
+          },
+          {
+            "text": "醒来",
+            "begin_time": "2430",
+            "end_time": "2940",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 1350,
+        "end_time": 2940,
+        "channel_id": 0
+      },
+      {
+        "text": "但总有人已经点亮了第一盏灯。",
+        "words": [
+          {
+            "text": "但",
+            "begin_time": "3600",
+            "end_time": "3780",
+            "punc": ""
+          },
+          {
+            "text": "总",
+            "begin_time": "3780",
+            "end_time": "3970",
+            "punc": ""
+          },
+          {
+            "text": "有人",
+            "begin_time": "3970",
+            "end_time": "4560",
+            "punc": ""
+          },
+          {
+            "text": "已经",
+            "begin_time": "4690",
+            "end_time": "5040",
+            "punc": ""
+          },
+          {
+            "text": "点亮",
+            "begin_time": "5040",
+            "end_time": "5370",
+            "punc": ""
+          },
+          {
+            "text": "了",
+            "begin_time": "5370",
+            "end_time": "5480",
+            "punc": ""
+          },
+          {
+            "text": "第",
+            "begin_time": "5480",
+            "end_time": "5620",
+            "punc": ""
+          },
+          {
+            "text": "一盏",
+            "begin_time": "5620",
+            "end_time": "5920",
+            "punc": ""
+          },
+          {
+            "text": "灯",
+            "begin_time": "5920",
+            "end_time": "6230",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 3600,
+        "end_time": 6230,
+        "channel_id": 0
+      },
+      {
+        "text": "街角的便利店是这座城市永不熄灭的灯塔。",
+        "words": [
+          {
+            "text": "街角",
+            "begin_time": "6890",
+            "end_time": "7270",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "7270",
+            "end_time": "7350",
+            "punc": ""
+          },
+          {
+            "text": "便利店",
+            "begin_time": "7350",
+            "end_time": "8000",
+            "punc": ""
+          },
+          {
+            "text": "是",
+            "begin_time": "8280",
+            "end_time": "8530",
+            "punc": ""
+          },
+          {
+            "text": "这",
+            "begin_time": "8530",
+            "end_time": "8680",
+            "punc": ""
+          },
+          {
+            "text": "座",
+            "begin_time": "8680",
+            "end_time": "8820",
+            "punc": ""
+          },
+          {
+            "text": "城市",
+            "begin_time": "8820",
+            "end_time": "9460",
+            "punc": ""
+          },
+          {
+            "text": "永不",
+            "begin_time": "9460",
+            "end_time": "9820",
+            "punc": ""
+          },
+          {
+            "text": "熄灭",
+            "begin_time": "9820",
+            "end_time": "10170",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "10170",
+            "end_time": "10280",
+            "punc": ""
+          },
+          {
+            "text": "灯塔",
+            "begin_time": "10280",
+            "end_time": "10800",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 6890,
+        "end_time": 10800,
+        "channel_id": 0
+      },
+      {
+        "text": "环卫工人扫过路面沙沙声，",
+        "words": [
+          {
+            "text": "环卫工人",
+            "begin_time": "11340",
+            "end_time": "12100",
+            "punc": ""
+          },
+          {
+            "text": "扫",
+            "begin_time": "12100",
+            "end_time": "12310",
+            "punc": ""
+          },
+          {
+            "text": "过路",
+            "begin_time": "12310",
+            "end_time": "12600",
+            "punc": ""
+          },
+          {
+            "text": "面",
+            "begin_time": "12600",
+            "end_time": "12980",
+            "punc": ""
+          },
+          {
+            "text": "沙沙",
+            "begin_time": "13280",
+            "end_time": "13730",
+            "punc": ""
+          },
+          {
+            "text": "声",
+            "begin_time": "13730",
+            "end_time": "14160",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 11340,
+        "end_time": 14160,
+        "channel_id": 0
+      },
+      {
+        "text": "是清晨最早的节奏。",
+        "words": [
+          {
+            "text": "是",
+            "begin_time": "14160",
+            "end_time": "14410",
+            "punc": ""
+          },
+          {
+            "text": "清晨",
+            "begin_time": "14410",
+            "end_time": "15080",
+            "punc": ""
+          },
+          {
+            "text": "最早",
+            "begin_time": "15080",
+            "end_time": "15530",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "15530",
+            "end_time": "15640",
+            "punc": ""
+          },
+          {
+            "text": "节奏",
+            "begin_time": "15640",
+            "end_time": "16110",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 14160,
+        "end_time": 16110,
+        "channel_id": 0
+      },
+      {
+        "text": "公交司机搓了搓手，",
+        "words": [
+          {
+            "text": "公交",
+            "begin_time": "16760",
+            "end_time": "17100",
+            "punc": ""
+          },
+          {
+            "text": "司机",
+            "begin_time": "17100",
+            "end_time": "17490",
+            "punc": ""
+          },
+          {
+            "text": "搓",
+            "begin_time": "17490",
+            "end_time": "17680",
+            "punc": ""
+          },
+          {
+            "text": "了",
+            "begin_time": "17680",
+            "end_time": "17770",
+            "punc": ""
+          },
+          {
+            "text": "搓",
+            "begin_time": "17770",
+            "end_time": "17960",
+            "punc": ""
+          },
+          {
+            "text": "手",
+            "begin_time": "17960",
+            "end_time": "18380",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 16760,
+        "end_time": 18380,
+        "channel_id": 0
+      },
+      {
+        "text": "准备开始第一班车的循环。",
+        "words": [
+          {
+            "text": "准备",
+            "begin_time": "18690",
+            "end_time": "18980",
+            "punc": ""
+          },
+          {
+            "text": "开始",
+            "begin_time": "18980",
+            "end_time": "19540",
+            "punc": ""
+          },
+          {
+            "text": "第一",
+            "begin_time": "19540",
+            "end_time": "19820",
+            "punc": ""
+          },
+          {
+            "text": "班车",
+            "begin_time": "19820",
+            "end_time": "20180",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "20180",
+            "end_time": "20270",
+            "punc": ""
+          },
+          {
+            "text": "循环",
+            "begin_time": "20270",
+            "end_time": "20840",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 18690,
+        "end_time": 20840,
+        "channel_id": 0
+      },
+      {
+        "text": "早餐摊的热气模糊了早起行人的脸，",
+        "words": [
+          {
+            "text": "早餐",
+            "begin_time": "21370",
+            "end_time": "21800",
+            "punc": ""
+          },
+          {
+            "text": "摊",
+            "begin_time": "21800",
+            "end_time": "21970",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "21970",
+            "end_time": "22080",
+            "punc": ""
+          },
+          {
+            "text": "热气",
+            "begin_time": "22080",
+            "end_time": "22700",
+            "punc": ""
+          },
+          {
+            "text": "模糊",
+            "begin_time": "22880",
+            "end_time": "23260",
+            "punc": ""
+          },
+          {
+            "text": "了",
+            "begin_time": "23260",
+            "end_time": "23350",
+            "punc": ""
+          },
+          {
+            "text": "早起",
+            "begin_time": "23350",
+            "end_time": "23780",
+            "punc": ""
+          },
+          {
+            "text": "行人",
+            "begin_time": "23780",
+            "end_time": "24150",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "24150",
+            "end_time": "24240",
+            "punc": ""
+          },
+          {
+            "text": "脸",
+            "begin_time": "24240",
+            "end_time": "24550",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 21370,
+        "end_time": 24550,
+        "channel_id": 0
+      },
+      {
+        "text": "却清晰了城市的温度。",
+        "words": [
+          {
+            "text": "却",
+            "begin_time": "24940",
+            "end_time": "25180",
+            "punc": ""
+          },
+          {
+            "text": "清晰",
+            "begin_time": "25180",
+            "end_time": "25600",
+            "punc": ""
+          },
+          {
+            "text": "了",
+            "begin_time": "25600",
+            "end_time": "25700",
+            "punc": ""
+          },
+          {
+            "text": "城市",
+            "begin_time": "25700",
+            "end_time": "26110",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "26110",
+            "end_time": "26180",
+            "punc": ""
+          },
+          {
+            "text": "温度",
+            "begin_time": "26180",
+            "end_time": "26660",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 24940,
+        "end_time": 26660,
+        "channel_id": 0
+      },
+      {
+        "text": "你看，",
+        "words": [
+          {
+            "text": "你",
+            "begin_time": "27190",
+            "end_time": "27350",
+            "punc": ""
+          },
+          {
+            "text": "看",
+            "begin_time": "27350",
+            "end_time": "27720",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 27190,
+        "end_time": 27720,
+        "channel_id": 0
+      },
+      {
+        "text": "每一扇亮着的窗户，",
+        "words": [
+          {
+            "text": "每",
+            "begin_time": "27950",
+            "end_time": "28220",
+            "punc": ""
+          },
+          {
+            "text": "一扇",
+            "begin_time": "28220",
+            "end_time": "28520",
+            "punc": ""
+          },
+          {
+            "text": "亮",
+            "begin_time": "28520",
+            "end_time": "28720",
+            "punc": ""
+          },
+          {
+            "text": "着",
+            "begin_time": "28720",
+            "end_time": "28840",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "28840",
+            "end_time": "28930",
+            "punc": ""
+          },
+          {
+            "text": "窗户",
+            "begin_time": "28930",
+            "end_time": "29640",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 27950,
+        "end_time": 29640,
+        "channel_id": 0
+      },
+      {
+        "text": "都是一个正在努力生活的故事。",
+        "words": [
+          {
+            "text": "都",
+            "begin_time": "29820",
+            "end_time": "30020",
+            "punc": ""
+          },
+          {
+            "text": "是",
+            "begin_time": "30020",
+            "end_time": "30150",
+            "punc": ""
+          },
+          {
+            "text": "一个",
+            "begin_time": "30150",
+            "end_time": "30370",
+            "punc": ""
+          },
+          {
+            "text": "正在",
+            "begin_time": "30370",
+            "end_time": "30680",
+            "punc": ""
+          },
+          {
+            "text": "努力",
+            "begin_time": "30680",
+            "end_time": "30980",
+            "punc": ""
+          },
+          {
+            "text": "生活",
+            "begin_time": "30980",
+            "end_time": "31340",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "31340",
+            "end_time": "31420",
+            "punc": ""
+          },
+          {
+            "text": "故事",
+            "begin_time": "31420",
+            "end_time": "31870",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 29820,
+        "end_time": 31870,
+        "channel_id": 0
+      },
+      {
+        "text": "天快亮了，",
+        "words": [
+          {
+            "text": "天",
+            "begin_time": "32550",
+            "end_time": "32770",
+            "punc": ""
+          },
+          {
+            "text": "快",
+            "begin_time": "32770",
+            "end_time": "32960",
+            "punc": ""
+          },
+          {
+            "text": "亮",
+            "begin_time": "32960",
+            "end_time": "33170",
+            "punc": ""
+          },
+          {
+            "text": "了",
+            "begin_time": "33170",
+            "end_time": "33440",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 32550,
+        "end_time": 33440,
+        "channel_id": 0
+      },
+      {
+        "text": "这些微光会慢慢融进晨光里。",
+        "words": [
+          {
+            "text": "这些",
+            "begin_time": "33900",
+            "end_time": "34200",
+            "punc": ""
+          },
+          {
+            "text": "微光",
+            "begin_time": "34200",
+            "end_time": "34840",
+            "punc": ""
+          },
+          {
+            "text": "会",
+            "begin_time": "34840",
+            "end_time": "35060",
+            "punc": ""
+          },
+          {
+            "text": "慢慢",
+            "begin_time": "35060",
+            "end_time": "35390",
+            "punc": ""
+          },
+          {
+            "text": "融",
+            "begin_time": "35390",
+            "end_time": "35580",
+            "punc": ""
+          },
+          {
+            "text": "进",
+            "begin_time": "35580",
+            "end_time": "35740",
+            "punc": ""
+          },
+          {
+            "text": "晨光",
+            "begin_time": "35740",
+            "end_time": "36170",
+            "punc": ""
+          },
+          {
+            "text": "里",
+            "begin_time": "36170",
+            "end_time": "36440",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 33900,
+        "end_time": 36440,
+        "channel_id": 0
+      },
+      {
+        "text": "但你知道明天他们依旧会准时亮起。",
+        "words": [
+          {
+            "text": "但",
+            "begin_time": "37040",
+            "end_time": "37200",
+            "punc": ""
+          },
+          {
+            "text": "你",
+            "begin_time": "37200",
+            "end_time": "37340",
+            "punc": ""
+          },
+          {
+            "text": "知道",
+            "begin_time": "37340",
+            "end_time": "37790",
+            "punc": ""
+          },
+          {
+            "text": "明天",
+            "begin_time": "38090",
+            "end_time": "38790",
+            "punc": ""
+          },
+          {
+            "text": "他们",
+            "begin_time": "38910",
+            "end_time": "39200",
+            "punc": ""
+          },
+          {
+            "text": "依旧",
+            "begin_time": "39200",
+            "end_time": "39520",
+            "punc": ""
+          },
+          {
+            "text": "会",
+            "begin_time": "39520",
+            "end_time": "39670",
+            "punc": ""
+          },
+          {
+            "text": "准时",
+            "begin_time": "39670",
+            "end_time": "40020",
+            "punc": ""
+          },
+          {
+            "text": "亮",
+            "begin_time": "40020",
+            "end_time": "40210",
+            "punc": ""
+          },
+          {
+            "text": "起",
+            "begin_time": "40210",
+            "end_time": "40510",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 37040,
+        "end_time": 40510,
+        "channel_id": 0
+      }
+    ],
+    "latency": 1620
+  }
+}

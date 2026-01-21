@@ -210,24 +210,28 @@ def get_transcript_with_timestamps(
     if ext not in supported:
         raise ValueError(f'Unsupported audio format: {ext}')
 
-    boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW'
+    # 使用 test_timing.py 中验证过的方式：URL 查询参数 + application/octet-stream
+    url = f"https://{host}/stream/v1/FlashRecognizer"
+    request_url = (
+        f"{url}"
+        f"?appkey={appkey}"
+        f"&token={token}"
+        f"&format={ext}"
+        f"&sample_rate=16000"
+        f"&enable_timestamp_alignment=true"
+        f"&enable_word_level_result=true"
+    )
+
+    with open(audio_path, "rb") as f:
+        audio_content = f.read()
+
     headers = {
-        'Content-Type': f'multipart/form-data; boundary={boundary}',
-        'X-NLS-Token': token,
+        "Content-Type": "application/octet-stream",
+        "Content-Length": str(len(audio_content)),
     }
 
-    file_bytes = Path(audio_path).read_bytes()
-    multipart_head = (
-        f"--{boundary}\r\n"
-        f"Content-Disposition: form-data; name=\"appkey\"\r\n\r\n{appkey}\r\n"
-        f"--{boundary}\r\n"
-        f"Content-Disposition: form-data; name=\"audio\"; filename=\"audio.{ext.lower()}\"\r\n"
-        "Content-Type: application/octet-stream\r\n\r\n"
-    ).encode('utf-8')
-    multipart_tail = f"\r\n--{boundary}--\r\n".encode('utf-8')
-    body = multipart_head + file_bytes + multipart_tail
     conn = http.client.HTTPSConnection(host)
-    conn.request('POST', '/stream/v1/FlashRecognizer', body=body, headers=headers)
+    conn.request('POST', request_url, audio_content, headers)
     response = conn.getresponse()
     data = response.read().decode('utf-8')
     conn.close()
@@ -298,17 +302,33 @@ def find_timestamps_with_ai(script_lines: List[str], word_segments: List[dict]) 
 
 
 def calculate_scene_durations(audio_path: str, script_lines: List[str]) -> List[float]:
-    word_segments = get_transcript_with_timestamps(audio_path)
-    timestamp_results = find_timestamps_with_ai(script_lines, word_segments)
     timing_config = config.get('timing', {})
     min_duration = timing_config.get('min_duration', 2.0)
     max_duration = timing_config.get('max_duration', 15.0)
+    base_duration = timing_config.get('base_duration', 3.0)
+    chars_per_second = timing_config.get('chars_per_second', 0.25)
 
-    durations = []
-    for result in timestamp_results:
-        duration = max(min_duration, min(max_duration, result.get('duration', 0)))
-        durations.append(duration)
-    return durations
+    try:
+        word_segments = get_transcript_with_timestamps(audio_path)
+        timestamp_results = find_timestamps_with_ai(script_lines, word_segments)
+
+        durations = []
+        for result in timestamp_results:
+            duration = max(min_duration, min(max_duration, result.get('duration', 0)))
+            durations.append(duration)
+        return durations
+    except Exception as e:
+        print(f'[WARNING] ASR/AI matching failed: {e}')
+        print('[INFO] Using fallback duration calculation based on text length')
+        # 备选方案：基于字符数计算时长
+        durations = []
+        for line in script_lines:
+            # 基础时长 + 每个字符的阅读时长
+            char_count = len(line.strip())
+            duration = base_duration + (char_count * chars_per_second)
+            duration = max(min_duration, min(max_duration, duration))
+            durations.append(duration)
+        return durations
 
 
 def create_video_from_scenes(
@@ -480,12 +500,27 @@ class VideoProjectWorkflow:
         base = dict(self.config.get('minimax_speech', {}).get('voice_setting', {}))
         if override:
             base.update({k: v for k, v in override.items() if v is not None})
+        # 确保 speed 和 vol 是整数类型（MiniMax API 要求）
+        if 'speed' in base and isinstance(base['speed'], float):
+            base['speed'] = int(base['speed'])
+        if 'vol' in base and isinstance(base['vol'], float):
+            base['vol'] = int(base['vol'])
+        if 'pitch' in base and isinstance(base['pitch'], float):
+            base['pitch'] = int(base['pitch'])
         return base
 
     def _merge_audio(self, override: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         base = dict(self.config.get('minimax_speech', {}).get('audio_setting', {}))
         if override:
             base.update({k: v for k, v in override.items() if v is not None})
+        # 确保 sample_rate 和 bitrate 是整数类型（MiniMax API 要求）
+        if 'sample_rate' in base and isinstance(base['sample_rate'], float):
+            base['sample_rate'] = int(base['sample_rate'])
+        if 'bitrate' in base and isinstance(base['bitrate'], float):
+            base['bitrate'] = int(base['bitrate'])
+        # 确保 channel 是整数类型
+        if 'channel' in base and isinstance(base['channel'], float):
+            base['channel'] = int(base['channel'])
         return base
 
     def get_project(self, project_id: int) -> Dict[str, Any]:
@@ -822,6 +857,11 @@ def main():
     if not confirm:
         print(f"Run python main.py --project-id {project['id']} after you have assets ready.")
         return
+
+    # Auto-generate missing images before rendering (if ComfyUI is configured)
+    if workflow.comfy_client and workflow.comfy_client.can_use():
+        print('[ComfyUI] 正在检查并生成缺失的分镜图片...')
+        project = workflow.generate_images_for_project(project['id'], missing_only=True)
 
     final_project = workflow.finalize_project(project['id'])
     print(f"Completed! Audio: {final_project.get('audio_path')} Video: {final_project.get('video_path')}")

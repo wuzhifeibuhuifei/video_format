@@ -86,7 +86,7 @@ bgm_fadeout = 3.0
 appkey = "IRJDd8ke1ttfH367"
 
 # API Token（必填，注意Token有有效期，需要定期更新）
-token = "22d3c66e8f044cb8b0bc760149d223d7"
+token = "8e8f42f771224c0e85107da0a46c77a2"
 
 # 区域（可选，默认cn-shanghai）
 # 可选值: cn-shanghai, cn-beijing, cn-shenzhen
@@ -142,3 +142,4 @@ height = 1216
 seed = 1024
 steps = 20
 cfg = 3.5
+workflow_file = "d:/comfyUI/workflows/image_z_image_turbo.json"
