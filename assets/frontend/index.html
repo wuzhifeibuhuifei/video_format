@@ -22,7 +22,7 @@
 <body>
 <header>
     <h1>Video Workflow</h1>
-    <p>1) Configure theme and global options ? generate script + prompts; 2) produce storyboard images; 3) save edits and trigger rendering.</p>
+    <p>1) Configure theme and global options -> generate script + prompts; 2) produce storyboard images; 3) save edits and trigger rendering.</p>
 </header>
 <section>
     <h2>Create Project</h2>
@@ -33,7 +33,7 @@
         <label>Aspect ratio <input type='text' name='aspect_ratio' value='16:9' /></label>
         <label>Image style hint <input type='text' name='image_style' value='cinematic realism' /></label>
         <label>Negative prompt <input type='text' name='negative_prompt' value='low quality, blurry' /></label>
-        <label>MiniMax voice_id <input type='text' name='voice_id' placeholder='optional' /></label>
+        <label>Default MiniMax voice_id <input type='text' name='voice_id' placeholder='optional' /></label>
         <label>Speech speed <input type='number' step='0.1' name='voice_speed' placeholder='optional' /></label>
         <div class='actions'>
             <button type='submit'>Generate storyboard</button>
@@ -53,6 +53,7 @@
                 <th>Image prompt</th>
                 <th>Negative prompt</th>
                 <th>Image path</th>
+                <th>Voice ID</th>
             </tr>
         </thead>
         <tbody id='shotsBody'></tbody>
@@ -68,19 +69,20 @@ let currentProject = null;
 function renderProject(project) {
     currentProject = project;
     document.getElementById('projectSection').style.display = 'block';
-    const meta = ID:  | status: <br> +
-        udio:  | video: ;
+    const meta = `ID: ${project.id} | status: ${project.status}<br>` +
+        `audio: ${project.audio_path || 'N/A'} | video: ${project.video_path || 'N/A'}`;
     document.getElementById('projectMeta').innerHTML = meta;
     const tbody = document.getElementById('shotsBody');
     tbody.innerHTML = '';
     (project.shots || []).forEach((shot) => {
         const row = document.createElement('tr');
-        row.innerHTML = 
-            <td></td>
-            <td><textarea data-field='script_text' data-id=''></textarea></td>
-            <td><textarea data-field='image_prompt' data-id=''></textarea></td>
-            <td><textarea data-field='negative_prompt' data-id=''></textarea></td>
-            <td><input type='text' data-field='image_path' data-id='' value='' /></td>;
+        row.innerHTML =
+            `<td>${shot.index}</td>` +
+            `<td><textarea data-field='script_text' data-id='${shot.id}'>${shot.script_text}</textarea></td>` +
+            `<td><textarea data-field='image_prompt' data-id='${shot.id}'>${shot.image_prompt}</textarea></td>` +
+            `<td><textarea data-field='negative_prompt' data-id='${shot.id}'>${shot.negative_prompt}</textarea></td>` +
+            `<td><input type='text' data-field='image_path' data-id='${shot.id}' value='${shot.image_path}' /></td>` +
+            `<td><input type='text' data-field='voice_id' data-id='${shot.id}' value='${shot.voice_id || ''}' placeholder='default' /></td>`;
         tbody.appendChild(row);
     });
 }
@@ -94,12 +96,12 @@ async function createProject(payload) {
     return res.json();
 }
 async function fetchProject(id) {
-    const res = await fetch(/api/projects/);
+    const res = await fetch(`/api/projects/${id}`);
     if (!res.ok) throw new Error('project not found');
     return res.json();
 }
 async function updateShots(projectId, shots) {
-    const res = await fetch(/api/projects//shots, {
+    const res = await fetch(`/api/projects/${projectId}/shots`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shots }),
@@ -108,7 +110,7 @@ async function updateShots(projectId, shots) {
     return res.json();
 }
 async function confirmProject(projectId) {
-    const res = await fetch(/api/projects//confirm, { method: 'POST' });
+    const res = await fetch(`/api/projects/${projectId}/confirm`, { method: 'POST' });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
 }

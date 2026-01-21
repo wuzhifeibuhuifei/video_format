@@ -443,7 +443,7 @@ def calculate_scene_durations(audio_path: str, script_lines: List[str]) -> List[
 
 
 def create_video_from_scenes(
-    audio_path: str,
+    audio_paths: List[str],
     script_lines: List[str],
     image_paths: List[str],
     output_path: str,
@@ -461,39 +461,38 @@ def create_video_from_scenes(
     从场景创建视频
 
     Args:
+        audio_paths: 每个场景对应的音频文件路径列表
         test_mode: 测试模式，只生成前 N 秒的视频
         test_duration: 测试模式下的视频时长（秒）
     """
     logger.info(f'开始创建视频: {output_path}')
     logger.info(f'参数: fps={fps}, resolution={resolution}, test_mode={test_mode}, test_duration={test_duration}')
-    logger.debug(f'脚本数量: {len(script_lines)}, 图片数量: {len(image_paths)}')
+    logger.debug(f'脚本数量: {len(script_lines)}, 图片数量: {len(image_paths)}, 音频数量: {len(audio_paths)}')
 
     if len(script_lines) != len(image_paths):
         logger.error(f'脚本和图片数量不匹配: {len(script_lines)} vs {len(image_paths)}')
         raise ValueError('Script lines and image count mismatch')
-    if not Path(audio_path).exists():
-        logger.error(f'音频文件不存在: {audio_path}')
-        raise FileNotFoundError(audio_path)
+    if len(script_lines) != len(audio_paths):
+        logger.error(f'脚本和音频数量不匹配: {len(script_lines)} vs {len(audio_paths)}')
+        raise ValueError('Script lines and audio count mismatch')
+
+    for audio_path in audio_paths:
+        if not Path(audio_path).exists():
+            logger.error(f'音频文件不存在: {audio_path}')
+            raise FileNotFoundError(audio_path)
     for img in image_paths:
         if not Path(img).exists():
             raise FileNotFoundError(img)
 
-    # 测试模式：截取音频和限制场景
-    if test_mode:
-        print(f'[TEST MODE] 只生成前 {test_duration} 秒的视频')
-
-        # 加载音频并截取
-        audio_clip = AudioFileClip(audio_path)
-        if audio_clip.duration > test_duration:
-            audio_clip = audio_clip.subclipped(0, test_duration)
-            # 保存截取后的音频到临时文件
-            test_audio_path = Path(audio_path).parent / f'temp_{Path(audio_path).name}'
-            audio_clip.write_audiofile(str(test_audio_path))
-            audio_path = str(test_audio_path)
-            print(f'[TEST MODE] 音频已截取到 {test_duration} 秒')
-            audio_clip.close()  # 释放资源
-
-    scene_durations = calculate_scene_durations(audio_path, script_lines)
+    # 直接从音频文件获取时长
+    logger.info('从音频文件获取场景时长...')
+    scene_durations = []
+    for audio_path in audio_paths:
+        clip = AudioFileClip(audio_path)
+        duration = clip.duration
+        clip.close()
+        scene_durations.append(duration)
+    logger.info(f'场景时长: {scene_durations}')
 
     # 测试模式：累计时长，只保留需要的场景
     if test_mode:
@@ -510,9 +509,10 @@ def create_video_from_scenes(
             included_indices = [0]  # 至少包含第一个场景
 
         print(f'[TEST MODE] 包含场景: {included_indices} (总时长: {total_duration:.1f}s)')
-        # 截取脚本和图片路径
+        # 截取脚本、图片路径和音频路径
         script_lines = [script_lines[i] for i in included_indices]
         image_paths = [image_paths[i] for i in included_indices]
+        audio_paths = [audio_paths[i] for i in included_indices]
         scene_durations = [scene_durations[i] for i in included_indices]
     width, height = resolution
     subtitle_height = int(height * 0.12)
@@ -627,24 +627,38 @@ def create_video_from_scenes(
         current_time += clip_duration
 
     final_video = CompositeVideoClip(clips_with_transitions)
-    audio_clip = AudioFileClip(audio_path)
 
+    # 拼接所有音频片段（手动实现）
+    logger.info('拼接音频片段...')
+    audio_segments = [AudioFileClip(path) for path in audio_paths]
+
+    # 计算每个音频片段的起始时间
+    current_time = 0.0
+    for i, segment in enumerate(audio_segments):
+        audio_segments[i] = segment.with_start(current_time)
+        current_time += segment.duration
+
+    # 创建合成音频
+    final_audio = CompositeAudioClip(audio_segments)
+
+    # 添加背景音乐（可选）
     audio_effects = config.get('audio_effects', {})
     if audio_effects.get('enable_bgm'):
         logger.info(f'添加背景音乐...')
+        total_duration = current_time
         bgm_audio = create_bgm_audio(
             bgm_path=audio_effects.get('bgm_path', 'assets/audio/background_music.mp3'),
-            duration=audio_clip.duration,
+            duration=total_duration,
             volume=audio_effects.get('bgm_volume', 0.3),
             loop=audio_effects.get('bgm_loop', True),
             fadein=audio_effects.get('bgm_fadein', 2.0),
             fadeout=audio_effects.get('bgm_fadeout', 3.0),
         )
         if bgm_audio is not None:
-            audio_clip = CompositeAudioClip([audio_clip, bgm_audio])
+            final_audio = CompositeAudioClip([final_audio, bgm_audio])
             logger.info('背景音乐添加成功')
 
-    final_video = final_video.with_audio(audio_clip)
+    final_video = final_video.with_audio(final_audio)
 
     logger.info(f'开始写入视频文件: {output_path}')
     logger.info(f'视频总时长: {final_video.duration:.2f} 秒')
@@ -659,7 +673,9 @@ def create_video_from_scenes(
     logger.info(f'视频写入完成: {output_path}')
 
     final_video.close()
-    audio_clip.close()
+    final_audio.close()
+    for segment in audio_segments:
+        segment.close()
     for clip in video_clips:
         clip.close()
 
@@ -857,35 +873,65 @@ class VideoProjectWorkflow:
                 extra_options[key] = audio_setting.pop(key)
 
         audio_ext = audio_setting.get('format', 'mp3')
-        audio_path = self.audio_root / f'project_{project_id}.{audio_ext}'
         video_path = self.video_root / f'project_{project_id}.mp4'
 
-        # 测试模式：复用已存在的音频文件
-        if test_mode and audio_path.exists():
-            logger.info(f'[TEST MODE] 复用已有音频: {audio_path}')
-            print(f'[TEST MODE] 复用已有音频: {audio_path}')
-        else:
-            # 正常模式或测试模式但音频不存在：生成音频
-            if test_mode:
-                logger.info('[TEST MODE] 音频文件不存在，生成新音频...')
-                print(f'[TEST MODE] 音频文件不存在，生成新音频...')
-            logger.info(f'开始合成语音（TTS）...')
+        # 为每个分镜单独生成音频
+        audio_paths = []
+        shots_to_process = shots
+        script_lines_to_process = script_lines
+        image_paths_to_process = image_paths
+
+        # 测试模式：只使用第一个分镜
+        if test_mode:
+            logger.info('[TEST MODE] 只生成第一个分镜的音频和视频')
+            shots_to_process = [shots[0]]
+            script_lines_to_process = [script_lines[0]]
+            image_paths_to_process = [image_paths[0]]
+
+        # 检查是否所有音频已存在（复用模式）
+        all_audio_exist = True
+        for idx, shot in enumerate(shots_to_process, start=1):
+            shot_audio_path = self.audio_root / f'project_{project_id}_shot_{shot["index"]}.{audio_ext}'
+            if not shot_audio_path.exists():
+                all_audio_exist = False
+                break
+            audio_paths.append(str(shot_audio_path))
+
+        # 如果音频不存在，生成新的
+        if not all_audio_exist:
+            logger.info(f'开始合成语音（TTS）...，共 {len(shots_to_process)} 个分镜')
             self.db.update_project(project_id, status='processing')
             try:
-                narrative_text = '\n'.join(script_lines)
-                logger.debug(f'脚本文本长度: {len(narrative_text)} 字符')
-                self.tts_client.synthesize(
-                    text=narrative_text,
-                    output_path=audio_path,
-                    voice_setting=voice_setting,
-                    audio_setting=audio_setting,
-                    extra_options=extra_options or None,
-                )
-                logger.info(f'语音合成完成: {audio_path}')
+                for idx, (shot, script_text) in enumerate(zip(shots_to_process, script_lines_to_process), start=1):
+                    shot_audio_path = self.audio_root / f'project_{project_id}_shot_{shot["index"]}.{audio_ext}'
+                    logger.info(f'正在生成分镜 #{idx} (index={shot["index"]}) 的语音: {script_text[:30]}...')
+
+                    # 使用场景特定的 voice_id（如果有），否则使用默认配置
+                    shot_voice_setting = voice_setting
+                    if shot.get("voice_id"):
+                        shot_voice_setting = voice_setting.copy()
+                        shot_voice_setting["voice_id"] = shot["voice_id"]
+                        logger.info(f'  使用场景特定声音: {shot["voice_id"]}')
+
+                    self.tts_client.synthesize(
+                        text=script_text,
+                        output_path=shot_audio_path,
+                        voice_setting=shot_voice_setting,
+                        audio_setting=audio_setting,
+                        extra_options=extra_options or None,
+                    )
+
+                    # 更新数据库记录
+                    self.db.update_shot_audio_path(shot['id'], str(shot_audio_path))
+                    audio_paths.append(str(shot_audio_path))
+                    logger.info(f'分镜 #{idx} 音频生成完成: {shot_audio_path}')
+                logger.info(f'所有语音合成完成')
             except Exception:
                 logger.exception(f'语音合成失败')
                 self.db.update_project(project_id, status='failed')
                 raise
+        else:
+            logger.info(f'复用已存在的音频文件')
 
         # 生成视频
         self.db.update_project(project_id, status='processing')
@@ -893,9 +939,9 @@ class VideoProjectWorkflow:
             resolution = get_resolution_from_config(project.get('aspect_ratio', DEFAULT_ASPECT_RATIO))
             logger.info(f'分辨率: {resolution}')
             create_video_from_scenes(
-                audio_path=str(audio_path),
-                script_lines=script_lines,
-                image_paths=image_paths,
+                audio_paths=audio_paths,
+                script_lines=script_lines_to_process,
+                image_paths=image_paths_to_process,
                 output_path=str(video_path),
                 fps=24,
                 resolution=resolution,
@@ -905,7 +951,6 @@ class VideoProjectWorkflow:
             self.db.update_project(
                 project_id,
                 status='rendered',
-                audio_path=str(audio_path),
                 video_path=str(video_path),
             )
             logger.info(f'项目 #{project_id} 渲染完成!')

@@ -18,6 +18,8 @@ class ShotRecord:
     image_prompt: str
     negative_prompt: str
     image_path: str
+    audio_path: Optional[str] = None
+    voice_id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -62,6 +64,7 @@ class ProjectDatabase:
                     image_prompt TEXT NOT NULL,
                     negative_prompt TEXT,
                     image_path TEXT NOT NULL,
+                    audio_path TEXT,
                     metadata_json TEXT,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
@@ -69,6 +72,18 @@ class ProjectDatabase:
                 );
                 """
             )
+            # 迁移：为已存在的 shots 表添加 audio_path 列
+            try:
+                conn.execute("ALTER TABLE shots ADD COLUMN audio_path TEXT")
+            except sqlite3.OperationalError:
+                # 列已存在，忽略错误
+                pass
+            # 迁移：为已存在的 shots 表添加 voice_id 列
+            try:
+                conn.execute("ALTER TABLE shots ADD COLUMN voice_id TEXT")
+            except sqlite3.OperationalError:
+                # 列已存在，忽略错误
+                pass
 
     # ------------------------------------------------------------------ Projects
     def create_project(
@@ -173,8 +188,8 @@ class ProjectDatabase:
                     """
                     INSERT INTO shots (
                         project_id, display_index, script_text, image_prompt,
-                        negative_prompt, image_path, metadata_json, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        negative_prompt, image_path, audio_path, voice_id, metadata_json, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         project_id,
@@ -183,6 +198,8 @@ class ProjectDatabase:
                         shot.image_prompt,
                         shot.negative_prompt,
                         shot.image_path,
+                        shot.audio_path,
+                        shot.voice_id,
                         json.dumps(metadata, ensure_ascii=False),
                         now,
                         now,
@@ -193,10 +210,13 @@ class ProjectDatabase:
         """Update editable fields for a batch of shots."""
         with self._connect() as conn:
             for shot in shots:
+                voice_id = shot.get("voice_id")
+                if voice_id is not None and voice_id == "":
+                    voice_id = None
                 conn.execute(
                     """
                     UPDATE shots
-                    SET script_text = ?, image_prompt = ?, negative_prompt = ?, image_path = ?, updated_at = ?
+                    SET script_text = ?, image_prompt = ?, negative_prompt = ?, image_path = ?, voice_id = ?, updated_at = ?
                     WHERE id = ? AND project_id = ?
                     """,
                     (
@@ -204,11 +224,20 @@ class ProjectDatabase:
                         shot["image_prompt"],
                         shot.get("negative_prompt") or "",
                         shot["image_path"],
+                        voice_id,
                         utc_now(),
                         shot["id"],
                         project_id,
                     ),
                 )
+
+    def update_shot_audio_path(self, shot_id: int, audio_path: str) -> None:
+        """更新单个分镜的音频路径"""
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE shots SET audio_path = ?, updated_at = ? WHERE id = ?",
+                (audio_path, utc_now(), shot_id)
+            )
 
     # ------------------------------------------------------------------ Helpers
     def _row_to_project(
@@ -252,6 +281,8 @@ class ProjectDatabase:
             "image_prompt": row["image_prompt"],
             "negative_prompt": row["negative_prompt"] or "",
             "image_path": row["image_path"],
+            "audio_path": row["audio_path"],
+            "voice_id": row["voice_id"],
             "metadata": metadata,
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
