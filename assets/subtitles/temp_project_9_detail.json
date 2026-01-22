@@ -1,0 +1,189 @@
+{
+  "task_id": "8c7ecf90586c40bca014b6fdeca4492a",
+  "result": "",
+  "status": 20000000,
+  "message": "SUCCESS",
+  "flash_result": {
+    "duration": 10000,
+    "completed": true,
+    "sentences": [
+      {
+        "text": "凌晨五点，",
+        "words": [
+          {
+            "text": "凌晨",
+            "begin_time": "220",
+            "end_time": "560",
+            "punc": ""
+          },
+          {
+            "text": "五点",
+            "begin_time": "560",
+            "end_time": "1110",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 220,
+        "end_time": 1110,
+        "channel_id": 0
+      },
+      {
+        "text": "城市还没完全醒来，",
+        "words": [
+          {
+            "text": "城市",
+            "begin_time": "1350",
+            "end_time": "1870",
+            "punc": ""
+          },
+          {
+            "text": "还",
+            "begin_time": "1870",
+            "end_time": "2020",
+            "punc": ""
+          },
+          {
+            "text": "没",
+            "begin_time": "2020",
+            "end_time": "2120",
+            "punc": ""
+          },
+          {
+            "text": "完全",
+            "begin_time": "2120",
+            "end_time": "2430",
+            "punc": ""
+          },
+          {
+            "text": "醒来",
+            "begin_time": "2430",
+            "end_time": "2940",
+            "punc": "，"
+          }
+        ],
+        "begin_time": 1350,
+        "end_time": 2940,
+        "channel_id": 0
+      },
+      {
+        "text": "但总有人已经点亮了第一盏灯。",
+        "words": [
+          {
+            "text": "但",
+            "begin_time": "3600",
+            "end_time": "3780",
+            "punc": ""
+          },
+          {
+            "text": "总",
+            "begin_time": "3780",
+            "end_time": "3970",
+            "punc": ""
+          },
+          {
+            "text": "有人",
+            "begin_time": "3970",
+            "end_time": "4560",
+            "punc": ""
+          },
+          {
+            "text": "已经",
+            "begin_time": "4690",
+            "end_time": "5040",
+            "punc": ""
+          },
+          {
+            "text": "点亮",
+            "begin_time": "5040",
+            "end_time": "5370",
+            "punc": ""
+          },
+          {
+            "text": "了",
+            "begin_time": "5370",
+            "end_time": "5490",
+            "punc": ""
+          },
+          {
+            "text": "第",
+            "begin_time": "5490",
+            "end_time": "5620",
+            "punc": ""
+          },
+          {
+            "text": "一盏",
+            "begin_time": "5620",
+            "end_time": "5910",
+            "punc": ""
+          },
+          {
+            "text": "灯",
+            "begin_time": "5910",
+            "end_time": "6230",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 3600,
+        "end_time": 6230,
+        "channel_id": 0
+      },
+      {
+        "text": "街角的便利店是这座城市永不。",
+        "words": [
+          {
+            "text": "街角",
+            "begin_time": "6890",
+            "end_time": "7270",
+            "punc": ""
+          },
+          {
+            "text": "的",
+            "begin_time": "7270",
+            "end_time": "7350",
+            "punc": ""
+          },
+          {
+            "text": "便利店",
+            "begin_time": "7350",
+            "end_time": "8000",
+            "punc": ""
+          },
+          {
+            "text": "是",
+            "begin_time": "8280",
+            "end_time": "8530",
+            "punc": ""
+          },
+          {
+            "text": "这",
+            "begin_time": "8530",
+            "end_time": "8680",
+            "punc": ""
+          },
+          {
+            "text": "座",
+            "begin_time": "8680",
+            "end_time": "8820",
+            "punc": ""
+          },
+          {
+            "text": "城市",
+            "begin_time": "8820",
+            "end_time": "9460",
+            "punc": ""
+          },
+          {
+            "text": "永不",
+            "begin_time": "9460",
+            "end_time": "9840",
+            "punc": "。"
+          }
+        ],
+        "begin_time": 6890,
+        "end_time": 9840,
+        "channel_id": 0
+      }
+    ],
+    "latency": 856
+  }
+}

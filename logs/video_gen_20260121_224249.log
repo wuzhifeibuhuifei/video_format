@@ -1,0 +1,47 @@
+[2026-01-21 22:42:49] [INFO] [VideoGen] 日志文件: D:\workspace\video_format_demo\logs\video_gen_20260121_224249.log
+[2026-01-21 22:42:49] [INFO] [VideoGen] ==================================================
+[2026-01-21 22:42:49] [INFO] [VideoGen] 视频生成工具启动
+[2026-01-21 22:42:49] [INFO] [VideoGen] ==================================================
+[2026-01-21 22:42:49] [DEBUG] [VideoGen] CLI 参数: {'theme': '讨好型人格', 'style': '????', 'image_style': '电影级写实，柔和补光，富有层次感的调色', 'negative_prompt': 'low quality, blurry, distorted anatomy, watermark', 'scene_count': 8, 'aspect_ratio': '16:9', 'voice_id': None, 'voice_speed': None, 'auto_confirm': True, 'auto_images': False, 'project_id': None, 'test': False, 'test_duration': 10.0, 'insight_text': '我把自己的伞给了人，自己淋得透湿。对方接过去没说谢，还嫌伞柄上有水。我怕他不高兴，赶紧赔着笑脸擦干净。第二次下雨，我刚把伞拿出来，他就直接伸手来夺，仿佛那本来就是他的东西。后来我才明白，这就是讨好者的下场。在他们眼里，我的弯腰不是修养，而是廉价的信号。因为给得太容易，我的付出就成了理所当然的贡品。当有一天我决定收起伞自己撑时，他立刻翻脸。他在人群中大声骂我自私、冷血，说我变了。他愤怒的根本不是我没帮他，而是那个随叫随到的奴隶竟然敢站起来了。最后我才真正明白，对于习惯骑在你头上的人来说，只要你不再跪着，你就是罪大恶极。请记住，尊严是靠露牙齿争来的，从来不是靠割肉换来的。', 'skip_insight': False}
+[2026-01-21 22:42:50] [INFO] [VideoGen] 创建新项目: theme=讨好型人格, scene_count=8
+[2026-01-21 22:42:50] [INFO] [VideoGen] 使用用户提供的洞察文案: 我把自己的伞给了人，自己淋得透湿。对方接过去没说谢，还嫌伞柄上有水。我怕他不高兴，赶紧赔着笑脸擦干净。第二次下雨，我刚把伞拿出来，他就直接伸手来夺，仿佛那本来就是他的东西。后来我才明白，这就是讨好者的...
+[2026-01-21 22:43:33] [INFO] [VideoGen] LLM 生成了 8 个镜头
+[2026-01-21 22:43:33] [INFO] [VideoGen] 项目 #13 创建成功
+[2026-01-21 22:43:33] [INFO] [VideoGen] 检查并生成缺失的分镜图片...
+[2026-01-21 22:45:12] [INFO] [VideoGen] 开始渲染项目 #13
+[2026-01-21 22:45:12] [INFO] [VideoGen] 开始渲染项目 #13 (test_mode=False, test_duration=10.0s)
+[2026-01-21 22:45:12] [INFO] [VideoGen] 项目分镜数量: 8
+[2026-01-21 22:45:12] [INFO] [VideoGen] 开始合成语音（TTS）...，共 8 个分镜
+[2026-01-21 22:45:12] [INFO] [VideoGen] 正在生成分镜 #1 (index=1) 的语音: 那天雨下得很大。我把自己的伞给了旁边的人，自己淋得浑身湿透。...
+[2026-01-21 22:45:15] [INFO] [VideoGen] 分镜 #1 音频生成完成: assets\audio\generated\project_13_shot_1.mp3
+[2026-01-21 22:45:15] [INFO] [VideoGen] 正在生成分镜 #2 (index=2) 的语音: 他接过去，连句谢谢都没有，反而嫌弃地看了一眼伞柄，说上面有水...
+[2026-01-21 22:45:17] [INFO] [VideoGen] 分镜 #2 音频生成完成: assets\audio\generated\project_13_shot_2.mp3
+[2026-01-21 22:45:17] [INFO] [VideoGen] 正在生成分镜 #3 (index=3) 的语音: 我怕他不高兴，赶紧赔着笑脸，用袖子把伞柄擦得干干净净。...
+[2026-01-21 22:45:20] [INFO] [VideoGen] 分镜 #3 音频生成完成: assets\audio\generated\project_13_shot_3.mp3
+[2026-01-21 22:45:20] [INFO] [VideoGen] 正在生成分镜 #4 (index=4) 的语音: 第二次下雨，我刚把伞拿出来，他看都没看我，手就直接伸过来夺，...
+[2026-01-21 22:45:23] [INFO] [VideoGen] 分镜 #4 音频生成完成: assets\audio\generated\project_13_shot_4.mp3
+[2026-01-21 22:45:23] [INFO] [VideoGen] 正在生成分镜 #5 (index=5) 的语音: 后来我才明白，这就是讨好者的下场。在他们眼里，我的弯腰不是修...
+[2026-01-21 22:45:26] [INFO] [VideoGen] 分镜 #5 音频生成完成: assets\audio\generated\project_13_shot_5.mp3
+[2026-01-21 22:45:26] [INFO] [VideoGen] 正在生成分镜 #6 (index=6) 的语音: 当有一天，我决定收起伞，自己撑的时候，他立刻翻了脸。...
+[2026-01-21 22:45:28] [INFO] [VideoGen] 分镜 #6 音频生成完成: assets\audio\generated\project_13_shot_6.mp3
+[2026-01-21 22:45:28] [INFO] [VideoGen] 正在生成分镜 #7 (index=7) 的语音: 他在人群中大声骂我自私、冷血，说我变了。他愤怒的根本不是我没...
+[2026-01-21 22:45:31] [INFO] [VideoGen] 分镜 #7 音频生成完成: assets\audio\generated\project_13_shot_7.mp3
+[2026-01-21 22:45:31] [INFO] [VideoGen] 正在生成分镜 #8 (index=8) 的语音: 最后我才真正明白，对于习惯骑在你头上的人来说，只要你不再跪着...
+[2026-01-21 22:45:35] [INFO] [VideoGen] 分镜 #8 音频生成完成: assets\audio\generated\project_13_shot_8.mp3
+[2026-01-21 22:45:35] [INFO] [VideoGen] 所有语音合成完成
+[2026-01-21 22:45:35] [INFO] [VideoGen] 分辨率: (1920, 1080)
+[2026-01-21 22:45:35] [INFO] [VideoGen] 开始创建视频: outputs\project_13.mp4
+[2026-01-21 22:45:35] [INFO] [VideoGen] 参数: fps=24, resolution=(1920, 1080), test_mode=False, test_duration=10.0
+[2026-01-21 22:45:35] [DEBUG] [VideoGen] 脚本数量: 8, 图片数量: 8, 音频数量: 8
+[2026-01-21 22:45:35] [INFO] [VideoGen] 从音频文件获取场景时长...
+[2026-01-21 22:45:35] [INFO] [VideoGen] 场景时长: [6.73, 6.8, 5.8, 9.18, 8.71, 5.76, 11.56, 12.78]
+[2026-01-21 22:45:37] [INFO] [VideoGen] 创建了 8 个视频片段
+[2026-01-21 22:45:38] [INFO] [VideoGen] 拼接音频片段...
+[2026-01-21 22:45:39] [INFO] [VideoGen] 添加背景音乐...
+[2026-01-21 22:45:39] [INFO] [VideoGen] 背景音乐添加成功
+[2026-01-21 22:45:39] [INFO] [VideoGen] 开始写入视频文件: outputs\project_13.mp4
+[2026-01-21 22:45:39] [INFO] [VideoGen] 视频总时长: 66.82 秒
+[2026-01-21 22:51:10] [INFO] [VideoGen] 视频写入完成: outputs\project_13.mp4
+[2026-01-21 22:51:10] [INFO] [VideoGen] 项目 #13 渲染完成!
+[2026-01-21 22:51:10] [INFO] [VideoGen] 项目渲染完成! 音频: None, 视频: outputs\project_13.mp4
+[2026-01-21 22:51:10] [INFO] [VideoGen] ==================================================

@@ -1,0 +1,24 @@
+[2026-01-21 19:16:07] [INFO] [VideoGen] 日志文件: D:\workspace\video_format_demo\logs\video_gen_20260121_191607.log
+[2026-01-21 19:16:07] [INFO] [VideoGen] ==================================================
+[2026-01-21 19:16:07] [INFO] [VideoGen] 视频生成工具启动
+[2026-01-21 19:16:07] [INFO] [VideoGen] ==================================================
+[2026-01-21 19:16:07] [DEBUG] [VideoGen] CLI 参数: {'theme': None, 'style': '????', 'image_style': '电影级写实，柔和补光，富有层次感的调色', 'negative_prompt': 'low quality, blurry, distorted anatomy, watermark', 'scene_count': 8, 'aspect_ratio': '16:9', 'voice_id': None, 'voice_speed': None, 'auto_confirm': False, 'auto_images': False, 'project_id': 9, 'test': False, 'test_duration': 10.0}
+[2026-01-21 19:16:07] [INFO] [VideoGen] 渲染现有项目 #9
+[2026-01-21 19:16:07] [INFO] [VideoGen] 开始渲染项目 #9 (test_mode=False, test_duration=10.0s)
+[2026-01-21 19:16:07] [INFO] [VideoGen] 项目分镜数量: 8
+[2026-01-21 19:16:07] [INFO] [VideoGen] 复用已存在的音频文件
+[2026-01-21 19:16:07] [INFO] [VideoGen] 分辨率: (1920, 1080)
+[2026-01-21 19:16:07] [INFO] [VideoGen] 开始创建视频: outputs\project_9.mp4
+[2026-01-21 19:16:07] [INFO] [VideoGen] 参数: fps=24, resolution=(1920, 1080), test_mode=False, test_duration=10.0
+[2026-01-21 19:16:07] [DEBUG] [VideoGen] 脚本数量: 8, 图片数量: 8, 音频数量: 8
+[2026-01-21 19:16:07] [INFO] [VideoGen] 从音频文件获取场景时长...
+[2026-01-21 19:16:08] [INFO] [VideoGen] 场景时长: [3.42, 3.42, 4.5, 5.29, 4.75, 5.76, 5.44, 8.75]
+[2026-01-21 19:16:09] [INFO] [VideoGen] 创建了 8 个视频片段
+[2026-01-21 19:16:10] [INFO] [VideoGen] 拼接音频片段...
+[2026-01-21 19:16:11] [INFO] [VideoGen] 添加背景音乐...
+[2026-01-21 19:16:11] [INFO] [VideoGen] 背景音乐添加成功
+[2026-01-21 19:16:11] [INFO] [VideoGen] 开始写入视频文件: outputs\project_9.mp4
+[2026-01-21 19:16:11] [INFO] [VideoGen] 视频总时长: 40.83 秒
+[2026-01-21 19:19:44] [INFO] [VideoGen] 视频写入完成: outputs\project_9.mp4
+[2026-01-21 19:19:45] [INFO] [VideoGen] 项目 #9 渲染完成!
+[2026-01-21 19:19:45] [INFO] [VideoGen] 项目 #9 渲染完成 -> outputs\project_9.mp4

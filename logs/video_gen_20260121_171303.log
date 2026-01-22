@@ -1,0 +1,7 @@
+[2026-01-21 17:13:03] [INFO] [VideoGen] 日志文件: D:\workspace\video_format_demo\logs\video_gen_20260121_171303.log
+[2026-01-21 17:13:03] [INFO] [VideoGen] ==================================================
+[2026-01-21 17:13:03] [INFO] [VideoGen] 视频生成工具启动
+[2026-01-21 17:13:03] [INFO] [VideoGen] ==================================================
+[2026-01-21 17:13:03] [DEBUG] [VideoGen] CLI 参数: {'theme': None, 'style': '????', 'image_style': '电影级写实，柔和补光，富有层次感的调色', 'negative_prompt': 'low quality, blurry, distorted anatomy, watermark', 'scene_count': 8, 'aspect_ratio': '16:9', 'voice_id': None, 'voice_speed': None, 'auto_confirm': False, 'auto_images': False, 'project_id': 9, 'test': False, 'test_duration': 10.0}
+[2026-01-21 17:13:04] [INFO] [VideoGen] 渲染现有项目 #9
+[2026-01-21 17:13:04] [INFO] [VideoGen] 开始渲染项目 #9 (test_mode=False, test_duration=10.0s)

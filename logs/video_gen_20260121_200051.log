@@ -1,0 +1,47 @@
+[2026-01-21 20:00:51] [INFO] [VideoGen] 日志文件: D:\workspace\video_format_demo\logs\video_gen_20260121_200051.log
+[2026-01-21 20:00:51] [INFO] [VideoGen] ==================================================
+[2026-01-21 20:00:51] [INFO] [VideoGen] 视频生成工具启动
+[2026-01-21 20:00:51] [INFO] [VideoGen] ==================================================
+[2026-01-21 20:00:51] [DEBUG] [VideoGen] CLI 参数: {'theme': '城市微光', 'style': '温暖治愈', 'image_style': '电影级写实，柔和补光，富有层次感的调色', 'negative_prompt': 'low quality, blurry, distorted anatomy, watermark', 'scene_count': 8, 'aspect_ratio': '16:9', 'voice_id': None, 'voice_speed': None, 'auto_confirm': False, 'auto_images': False, 'project_id': None, 'test': False, 'test_duration': 10.0, 'skip_insight': False}
+[2026-01-21 20:00:52] [INFO] [VideoGen] 创建新项目: theme=城市微光, scene_count=8
+[2026-01-21 20:00:52] [INFO] [VideoGen] 正在为主题 '城市微光' 生成社会洞察...
+[2026-01-21 20:01:12] [INFO] [VideoGen] 洞察生成完成: 《城市微光》的核心洞察在于，现代都市的宏大叙事与个体渺小感形成强烈反差，而‘微光’象征着人们在疏离与...
+[2026-01-21 20:02:15] [INFO] [VideoGen] 项目 #12 创建成功
+[2026-01-21 20:02:26] [INFO] [VideoGen] 检查并生成缺失的分镜图片...
+[2026-01-21 20:03:40] [INFO] [VideoGen] 开始渲染项目 #12
+[2026-01-21 20:03:40] [INFO] [VideoGen] 开始渲染项目 #12 (test_mode=False, test_duration=10.0s)
+[2026-01-21 20:03:40] [INFO] [VideoGen] 项目分镜数量: 8
+[2026-01-21 20:03:40] [INFO] [VideoGen] 开始合成语音（TTS）...，共 8 个分镜
+[2026-01-21 20:03:40] [INFO] [VideoGen] 正在生成分镜 #1 (index=1) 的语音: 凌晨四点，城市还在沉睡。只有路灯，和像他一样醒着的人。...
+[2026-01-21 20:03:43] [INFO] [VideoGen] 分镜 #1 音频生成完成: assets\audio\generated\project_12_shot_1.mp3
+[2026-01-21 20:03:43] [INFO] [VideoGen] 正在生成分镜 #2 (index=2) 的语音: 他的手很稳，一下，又一下。扫走的不仅是落叶，还有昨夜所有的喧...
+[2026-01-21 20:03:46] [INFO] [VideoGen] 分镜 #2 音频生成完成: assets\audio\generated\project_12_shot_2.mp3
+[2026-01-21 20:03:46] [INFO] [VideoGen] 正在生成分镜 #3 (index=3) 的语音: 街角，那扇总是最早亮起的窗。蒸汽模糊了玻璃，也模糊了窗外尚未...
+[2026-01-21 20:03:48] [INFO] [VideoGen] 分镜 #3 音频生成完成: assets\audio\generated\project_12_shot_3.mp3
+[2026-01-21 20:03:48] [INFO] [VideoGen] 正在生成分镜 #4 (index=4) 的语音: 她记得每个熟客的口味。‘今天还是多加一勺辣子？’ 这句话，像...
+[2026-01-21 20:03:51] [INFO] [VideoGen] 分镜 #4 音频生成完成: assets\audio\generated\project_12_shot_4.mp3
+[2026-01-21 20:03:51] [INFO] [VideoGen] 正在生成分镜 #5 (index=5) 的语音: 通勤的地铁上，人们像沙丁鱼一样挤在一起，却又隔着最远的距离。...
+[2026-01-21 20:03:54] [INFO] [VideoGen] 分镜 #5 音频生成完成: assets\audio\generated\project_12_shot_5.mp3
+[2026-01-21 20:03:54] [INFO] [VideoGen] 正在生成分镜 #6 (index=6) 的语音: 写字楼的格子间，日光灯苍白。但她的桌上，有一小盆倔强生长的绿...
+[2026-01-21 20:03:57] [INFO] [VideoGen] 分镜 #6 音频生成完成: assets\audio\generated\project_12_shot_6.mp3
+[2026-01-21 20:03:57] [INFO] [VideoGen] 正在生成分镜 #7 (index=7) 的语音: 深夜的便利店，是城市不打烊的港湾。‘热好了，小心烫。’ 店员...
+[2026-01-21 20:04:00] [INFO] [VideoGen] 分镜 #7 音频生成完成: assets\audio\generated\project_12_shot_7.mp3
+[2026-01-21 20:04:00] [INFO] [VideoGen] 正在生成分镜 #8 (index=8) 的语音: 你看，光从来不是独自闪耀。它们散落在每个角落，由每一个未眠的...
+[2026-01-21 20:04:03] [INFO] [VideoGen] 分镜 #8 音频生成完成: assets\audio\generated\project_12_shot_8.mp3
+[2026-01-21 20:04:03] [INFO] [VideoGen] 所有语音合成完成
+[2026-01-21 20:04:03] [INFO] [VideoGen] 分辨率: (1920, 1080)
+[2026-01-21 20:04:03] [INFO] [VideoGen] 开始创建视频: outputs\project_12.mp4
+[2026-01-21 20:04:03] [INFO] [VideoGen] 参数: fps=24, resolution=(1920, 1080), test_mode=False, test_duration=10.0
+[2026-01-21 20:04:03] [DEBUG] [VideoGen] 脚本数量: 8, 图片数量: 8, 音频数量: 8
+[2026-01-21 20:04:03] [INFO] [VideoGen] 从音频文件获取场景时长...
+[2026-01-21 20:04:04] [INFO] [VideoGen] 场景时长: [6.62, 8.03, 8.28, 9.36, 11.34, 9.9, 8.75, 18.83]
+[2026-01-21 20:04:06] [INFO] [VideoGen] 创建了 8 个视频片段
+[2026-01-21 20:04:07] [INFO] [VideoGen] 拼接音频片段...
+[2026-01-21 20:04:08] [INFO] [VideoGen] 添加背景音乐...
+[2026-01-21 20:04:08] [INFO] [VideoGen] 背景音乐添加成功
+[2026-01-21 20:04:08] [INFO] [VideoGen] 开始写入视频文件: outputs\project_12.mp4
+[2026-01-21 20:04:08] [INFO] [VideoGen] 视频总时长: 80.61 秒
+[2026-01-21 20:10:52] [INFO] [VideoGen] 视频写入完成: outputs\project_12.mp4
+[2026-01-21 20:10:52] [INFO] [VideoGen] 项目 #12 渲染完成!
+[2026-01-21 20:10:52] [INFO] [VideoGen] 项目渲染完成! 音频: None, 视频: outputs\project_12.mp4
+[2026-01-21 20:10:52] [INFO] [VideoGen] ==================================================
