@@ -17,7 +17,7 @@ import opencc
 import toml
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from moviepy import (
     AudioFileClip,
     CompositeAudioClip,
@@ -742,30 +742,60 @@ class VideoProjectWorkflow:
         theme: str,
         style: Optional[str],
         aspect_ratio: str,
-        scene_count: int,
+        scene_count: Optional[int] = None,
         image_style: Optional[str],
         negative_prompt: Optional[str],
         voice_setting: Optional[Dict[str, Any]],
         audio_setting: Optional[Dict[str, Any]],
+        skip_insight: bool = False,
+        insight_text: Optional[str] = None,
     ) -> Dict[str, Any]:
         script_style = style or DEFAULT_STORY_TONE
         image_style_value = image_style or DEFAULT_IMAGE_STYLE
         negative_prompt_value = negative_prompt or DEFAULT_NEGATIVE_PROMPT
-        scene_count = max(1, min(scene_count, 30))
+
+        # 确定使用哪个洞察文案（优先级：用户文案 > AI生成 > 跳过）
+        insight_data = None
+
+        # 优先级 1: 用户提供的文案
+        if insight_text:
+            insight_data = insight_text
+            logger.info(f"使用用户提供的洞察文案: {insight_data[:100]}...")
+        # 优先级 2: AI 生成（如果未跳过）
+        elif not skip_insight:
+            logger.info(f"正在为主题 '{theme}' 生成社会洞察...")
+            try:
+                insight_data = self.storyboard_generator.generate_insight(
+                    theme=theme,
+                    style=script_style
+                )
+                core_insight = insight_data[:100] if insight_data else ""
+                logger.info(f"洞察生成完成: {core_insight}...")
+            except Exception as e:
+                logger.warning(f"洞察生成失败: {e}，继续使用常规流程")
+                insight_data = None
+        else:
+            logger.info("跳过洞察生成，直接生成分镜")
 
         storyboard = self.storyboard_generator.generate_storyboard(
             theme=theme,
             style=script_style,
-            scene_count=scene_count,
+            scene_count=scene_count,  # 可为 None，让 LLM 自定
             image_style=image_style_value,
             negative_prompt_hint=negative_prompt_value,
+            insight=insight_data,
         )
+
+        # 使用 LLM 实际生成的镜头数量
+        actual_count = storyboard.get("actual_scene_count", len(storyboard["shots"]))
+        logger.info(f"LLM 生成了 {actual_count} 个镜头")
 
         project_config = {
             'image_style': image_style_value,
             'negative_prompt': negative_prompt_value,
             'voice_setting': self._merge_voice(voice_setting),
             'audio_setting': self._merge_audio(audio_setting),
+            'insight': insight_data,
             'storyboard_meta': {
                 'title': storyboard.get('title', theme),
                 'voice_tone': storyboard.get('voice_tone', script_style),
@@ -776,7 +806,7 @@ class VideoProjectWorkflow:
             theme=theme,
             style=script_style,
             aspect_ratio=aspect_ratio or DEFAULT_ASPECT_RATIO,
-            scene_count=scene_count,
+            scene_count=actual_count,  # 保存实际数量
             status='draft',
             config=project_config,
         )
@@ -960,6 +990,129 @@ class VideoProjectWorkflow:
             raise
         return self.get_project(project_id)
 
+    def delete_project(self, project_id: int) -> None:
+        """Delete a project and its associated shots."""
+        project = self.get_project(project_id)
+        logger.info(f'删除项目 #{project_id}: {project.get("theme", "")}')
+
+        # Delete associated files
+        import shutil
+        image_dir = self.image_root / f'project_{project_id}'
+        if image_dir.exists():
+            shutil.rmtree(image_dir)
+            logger.info(f'删除图片目录: {image_dir}')
+
+        # Delete audio file if exists
+        if project.get('audio_path'):
+            audio_path = Path(project['audio_path'])
+            if audio_path.exists():
+                audio_path.unlink()
+                logger.info(f'删除音频文件: {audio_path}')
+
+        # Delete video file if exists
+        if project.get('video_path'):
+            video_path = Path(project['video_path'])
+            if video_path.exists():
+                video_path.unlink()
+                logger.info(f'删除视频文件: {video_path}')
+
+        # Delete from database (cascade will delete shots)
+        with self.db._connect() as conn:
+            conn.execute('DELETE FROM projects WHERE id = ?', (project_id,))
+        logger.info(f'项目 #{project_id} 已删除')
+
+    def generate_single_shot_image(self, project_id: int, shot_id: int) -> Dict[str, Any]:
+        """Regenerate image for a single shot."""
+        if not self.comfy_client or not self.comfy_client.can_use():
+            raise ValueError('ComfyUI not configured or unavailable')
+
+        project = self.get_project(project_id)
+        shot = None
+        for s in project.get('shots', []):
+            if s['id'] == shot_id:
+                shot = s
+                break
+
+        if not shot:
+            raise ValueError(f'Shot {shot_id} not found in project {project_id}')
+
+        image_path = Path(shot['image_path'])
+        prompt_text = shot.get('image_prompt') or project.get('config', {}).get('image_style', '')
+        negative_text = shot.get('negative_prompt') or project.get('config', {}).get('negative_prompt', '')
+
+        logger.info(f'Regenerating image for shot {shot["index"]} in project {project_id}')
+        self.comfy_client.generate_image(
+            prompt=prompt_text,
+            negative_prompt=negative_text,
+            output_path=image_path,
+        )
+        return self.get_project(project_id)
+
+    def export_project(self, project_id: int) -> Dict[str, Any]:
+        """Export project configuration as JSON."""
+        project = self.get_project(project_id)
+        return {
+            'theme': project.get('theme'),
+            'style': project.get('style'),
+            'aspect_ratio': project.get('aspect_ratio'),
+            'scene_count': project.get('scene_count'),
+            'shots': [
+                {
+                    'id': shot.get('id'),
+                    'script_text': shot.get('script_text'),
+                    'image_prompt': shot.get('image_prompt'),
+                    'negative_prompt': shot.get('negative_prompt'),
+                    'image_path': shot.get('image_path'),
+                    'voice_id': shot.get('voice_id'),
+                }
+                for shot in project.get('shots', [])
+            ],
+            'image_style': project.get('config', {}).get('image_style'),
+            'negative_prompt': project.get('config', {}).get('negative_prompt'),
+            'voice_setting': project.get('config', {}).get('voice_setting'),
+        }
+
+    def import_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Import a project from JSON configuration."""
+        image_style = data.get('image_style') or DEFAULT_IMAGE_STYLE
+        negative_prompt = data.get('negative_prompt') or DEFAULT_NEGATIVE_PROMPT
+
+        project_config = {
+            'image_style': image_style,
+            'negative_prompt': negative_prompt,
+            'voice_setting': self._merge_voice(data.get('voice_setting')),
+            'audio_setting': self._merge_audio(data.get('audio_setting')),
+            'imported': True,
+        }
+
+        project_id = self.db.create_project(
+            theme=data['theme'],
+            style=data['style'],
+            aspect_ratio=data.get('aspect_ratio', DEFAULT_ASPECT_RATIO),
+            scene_count=len(data.get('shots', [])),
+            status='draft',
+            config=project_config,
+        )
+
+        image_dir = self.image_root / f'project_{project_id}'
+        image_dir.mkdir(parents=True, exist_ok=True)
+
+        shot_records: List[ShotRecord] = []
+        for idx, shot_data in enumerate(data.get('shots', []), start=1):
+            image_path = image_dir / f'scene_{idx}.png'
+            shot_records.append(
+                ShotRecord(
+                    display_index=idx,
+                    script_text=shot_data.get('script_text', '').strip(),
+                    image_prompt=shot_data.get('image_prompt', '').strip(),
+                    negative_prompt=shot_data.get('negative_prompt', negative_prompt).strip(),
+                    image_path=str(image_path),
+                )
+            )
+        self.db.replace_shots(project_id, shot_records)
+        logger.info(f'项目导入成功 #{project_id}')
+        return self.get_project(project_id)
+
 
 WORKFLOW_INSTANCE: Optional[VideoProjectWorkflow] = None
 
@@ -976,10 +1129,12 @@ class ProjectCreateRequest(BaseModel):
     style: Optional[str] = None
     image_style: Optional[str] = None
     negative_prompt: Optional[str] = None
-    scene_count: int = Field(default=DEFAULT_SCENE_COUNT, ge=1, le=30)
+    scene_count: Optional[int] = Field(default=None, ge=1, le=50)
     aspect_ratio: str = Field(default=DEFAULT_ASPECT_RATIO)
     voice_setting: Optional[Dict[str, Any]] = None
     audio_setting: Optional[Dict[str, Any]] = None
+    insight_text: Optional[str] = None
+    skip_insight: bool = False
 
 
 class ShotUpdate(BaseModel):
@@ -988,6 +1143,7 @@ class ShotUpdate(BaseModel):
     image_prompt: str
     negative_prompt: Optional[str] = ''
     image_path: str
+    voice_id: Optional[str] = None
 
 
 class ShotsUpdateRequest(BaseModel):
@@ -1041,6 +1197,8 @@ def api_create_project(payload: ProjectCreateRequest):
             negative_prompt=payload.negative_prompt,
             voice_setting=payload.voice_setting,
             audio_setting=payload.audio_setting,
+            insight_text=payload.insight_text,
+            skip_insight=payload.skip_insight,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -1066,6 +1224,102 @@ def api_confirm_project(project_id: int):
         raise HTTPException(status_code=400, detail=str(exc))
 
 
+@app.delete('/api/projects/{project_id}')
+def api_delete_project(project_id: int):
+    """Delete a project and its associated shots."""
+    workflow = get_workflow()
+    try:
+        workflow.delete_project(project_id)
+        return {'message': f'Project {project_id} deleted successfully'}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@app.post('/api/projects/{project_id}/images')
+def api_regenerate_all_images(project_id: int, missing_only: bool = True):
+    """Regenerate all images for a project."""
+    workflow = get_workflow()
+    try:
+        return workflow.generate_images_for_project(project_id, missing_only=missing_only)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post('/api/projects/{project_id}/shots/{shot_id}/image')
+def api_regenerate_shot_image(project_id: int, shot_id: int):
+    """Regenerate image for a single shot."""
+    workflow = get_workflow()
+    try:
+        return workflow.generate_single_shot_image(project_id, shot_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get('/api/projects/{project_id}/export')
+def api_export_project(project_id: int):
+    """Export project configuration as JSON."""
+    workflow = get_workflow()
+    try:
+        return workflow.export_project(project_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+class ProjectImportRequest(BaseModel):
+    """Request model for importing a project."""
+    theme: str
+    style: str
+    aspect_ratio: str
+    scene_count: int
+    shots: List[ShotUpdate]
+    image_style: Optional[str] = None
+    negative_prompt: Optional[str] = None
+    voice_setting: Optional[Dict[str, Any]] = None
+
+
+@app.post('/api/projects/import')
+def api_import_project(payload: ProjectImportRequest):
+    """Import a project from JSON configuration."""
+    workflow = get_workflow()
+    try:
+        return workflow.import_project(payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get('/assets/{asset_type:path]')
+def api_serve_asset(asset_type: str):
+    """Serve static assets (images, videos, audio)."""
+    # Construct the full path
+    if asset_type.startswith('images/'):
+        file_path = Path(__file__).parent / 'assets' / asset_type
+    elif asset_type.startswith('audio/'):
+        file_path = Path(__file__).parent / 'assets' / asset_type
+    else:
+        file_path = Path(__file__).parent / 'assets' / asset_type
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail='Asset not found')
+
+    # Determine content type
+    if file_path.suffix.lower() in ['.png', '.jpg', '.jpeg', '.gif', '.webp']:
+        media_type = f'image/{file_path.suffix[1:]}'
+    elif file_path.suffix.lower() == '.svg':
+        media_type = 'image/svg+xml'
+    elif file_path.suffix.lower() in ['.mp4', '.webm', '.mov']:
+        media_type = f'video/{file_path.suffix[1:]}'
+    elif file_path.suffix.lower() in ['.mp3', '.wav', '.ogg']:
+        media_type = f'audio/{file_path.suffix[1:]}'
+    else:
+        media_type = 'application/octet-stream'
+
+    return FileResponse(file_path, media_type=media_type)
+
+
 def main():
     """CLI 主入口"""
     logger.info('=' * 50)
@@ -1077,7 +1331,7 @@ def main():
     parser.add_argument('--style', help='Narration tone', default=DEFAULT_STORY_TONE)
     parser.add_argument('--image-style', help='Global image style', default=DEFAULT_IMAGE_STYLE)
     parser.add_argument('--negative-prompt', help='Negative prompt', default=DEFAULT_NEGATIVE_PROMPT)
-    parser.add_argument('--scene-count', type=int, default=DEFAULT_SCENE_COUNT)
+    parser.add_argument('--scene-count', type=int, help='建议的最大镜头数量（可选，LLM 会根据内容自定）')
     parser.add_argument('--aspect-ratio', default=DEFAULT_ASPECT_RATIO)
     parser.add_argument('--voice-id', help='MiniMax voice_id override')
     parser.add_argument('--voice-speed', type=float, help='MiniMax speech speed override')
@@ -1086,6 +1340,8 @@ def main():
     parser.add_argument('--project-id', type=int, help='Render existing project')
     parser.add_argument('--test', action='store_true', help='Test mode: only generate first N seconds of video and reuse existing audio')
     parser.add_argument('--test-duration', type=float, default=10.0, help='Test mode video duration in seconds (default: 10.0)')
+    parser.add_argument('--insight-text', type=str, help='自定义洞察文案（跳过 AI 生成，直接使用此文案）')
+    parser.add_argument('--skip-insight', action='store_true', help='Skip social insight generation')
     args = parser.parse_args()
 
     logger.debug(f'CLI 参数: {vars(args)}')
@@ -1125,6 +1381,8 @@ def main():
         negative_prompt=args.negative_prompt,
         voice_setting=voice_override or None,
         audio_setting=None,
+        skip_insight=args.skip_insight,
+        insight_text=args.insight_text,
     )
     logger.info(f'项目 #{project["id"]} 创建成功')
 

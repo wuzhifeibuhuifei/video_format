@@ -1,200 +1,1383 @@
 <!DOCTYPE html>
-<html lang='en'>
+<html lang="zh-CN">
 <head>
-    <meta charset='UTF-8' />
-    <title>Video Workflow Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频工作台</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        header { margin-bottom: 20px; }
-        form label { display: block; margin-top: 10px; }
-        textarea { width: 100%; min-height: 60px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; }
-        th { background: #f5f5f5; }
-        .actions { margin-top: 20px; }
-        .status { margin-top: 10px; color: #0a7; }
-        .error { color: #c00; }
-        .project-meta { margin-top: 15px; padding: 10px; background: #f0f0f0; }
-        input[type='text'], input[type='number'] { width: 100%; padding: 6px; }
-        button { padding: 8px 14px; margin-right: 10px; }
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #f0f0f0;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border: #dddddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --accent: #4a90d9;
+            --accent-hover: #357abd;
+            --success: #0a7;
+            --error: #c00;
+            --warning: #f90;
+            --info: #09c;
+            --draft-badge: #9e9e9e;
+            --processing-badge: #2196f3;
+            --rendered-badge: #4caf50;
+            --failed-badge: #f44336;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #383838;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border: #444444;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
+            line-height: 1.6;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; }
+        h2 { margin-top: 0; font-size: 1.25rem; }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        button.secondary:hover {
+            background: var(--border);
+        }
+
+        button.danger {
+            background: var(--error);
+        }
+
+        button.danger:hover {
+            background: #a00;
+        }
+
+        button.icon-btn {
+            padding: 8px 12px;
+            background: transparent;
+            color: var(--text-primary);
+        }
+
+        button.icon-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        section {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px var(--shadow);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Project List Styles */
+        .list-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-draft { background: var(--draft-badge); color: white; }
+        .status-processing { background: var(--processing-badge); color: white; }
+        .status-rendered { background: var(--rendered-badge); color: white; }
+        .status-failed { background: var(--failed-badge); color: white; }
+
+        .actions-cell {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .actions-cell button {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        /* Form Styles */
+        form label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Project Detail Styles */
+        .project-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .meta-value {
+            font-weight: 600;
+        }
+
+        /* Video Player */
+        .video-player {
+            margin: 20px 0;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-player video {
+            width: 100%;
+            max-height: 500px;
+            display: block;
+        }
+
+        .video-player.has-video {
+            padding: 15px;
+        }
+
+        /* Image Preview */
+        .image-preview {
+            width: 100px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .image-preview:hover {
+            border-color: var(--accent);
+        }
+
+        .image-preview.placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin: 15px 0;
+            display: none;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--bg-primary);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 5px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        button.loading .spinner {
+            display: inline-block;
+        }
+
+        button.loading .btn-text {
+            opacity: 0.7;
+        }
+
+        /* Toast Notifications */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+        }
+
+        .toast {
+            padding: 12px 16px;
+            border-radius: 6px;
+            background: var(--bg-primary);
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+            max-width: 100%;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+        .toast.info { border-left: 4px solid var(--info); }
+
+        .toast-icon { font-size: 18px; }
+        .toast-message { flex: 1; word-break: break-word; }
+        .toast-close {
+            background: none;
+            color: var(--text-secondary);
+            padding: 0;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        /* Modal */
+        dialog {
+            border: none;
+            border-radius: 8px;
+            padding: 0;
+            max-width: 90vw;
+            max-height: 90vh;
+            background: var(--bg-primary);
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow: auto;
+            max-height: 80vh;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 70vh;
+            display: block;
+        }
+
+        /* File Input */
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 6px 12px;
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .file-label:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Shot Checkbox */
+        .shot-checkbox {
+            width: auto;
+            margin: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            header { flex-direction: column; gap: 10px; align-items: stretch; }
+            .header-controls { justify-content: space-between; }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .project-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions button {
+                width: 100%;
+            }
+
+            #toastContainer {
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
+        }
+
+        /* Utility */
+        .hidden { display: none !important; }
+        .text-secondary { color: var(--text-secondary); }
+        .small { font-size: 12px; }
+        .flex { display: flex; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .flex-wrap { flex-wrap: wrap; }
+
+        /* Action buttons in table */
+        .btn-icon {
+            padding: 4px 8px;
+            font-size: 16px;
+            line-height: 1;
+        }
     </style>
 </head>
 <body>
-<header>
-    <h1>Video Workflow</h1>
-    <p>1) Configure theme and global options -> generate script + prompts; 2) produce storyboard images; 3) save edits and trigger rendering.</p>
-</header>
-<section>
-    <h2>Create Project</h2>
-    <form id='projectForm'>
-        <label>Theme <input type='text' name='theme' required /></label>
-        <label>Story tone <input type='text' name='style' value='Warm and rational' /></label>
-        <label>Scene count <input type='number' name='scene_count' min='1' max='30' value='8' /></label>
-        <label>Aspect ratio <input type='text' name='aspect_ratio' value='16:9' /></label>
-        <label>Image style hint <input type='text' name='image_style' value='cinematic realism' /></label>
-        <label>Negative prompt <input type='text' name='negative_prompt' value='low quality, blurry' /></label>
-        <label>Default MiniMax voice_id <input type='text' name='voice_id' placeholder='optional' /></label>
-        <label>Speech speed <input type='number' step='0.1' name='voice_speed' placeholder='optional' /></label>
-        <div class='actions'>
-            <button type='submit'>Generate storyboard</button>
-            <button type='button' id='loadProject'>Load project</button>
-            <input type='number' id='loadProjectId' placeholder='Project ID' />
+    <header>
+        <div>
+            <h1>视频工作台</h1>
+            <p class="text-secondary small">使用 AI 生成的分镜创建、管理和渲染视频项目</p>
         </div>
-    </form>
-    <div id='formStatus' class='status'></div>
-</section>
-<section id='projectSection' style='display:none;'>
-    <div class='project-meta' id='projectMeta'></div>
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Narration</th>
-                <th>Image prompt</th>
-                <th>Negative prompt</th>
-                <th>Image path</th>
-                <th>Voice ID</th>
-            </tr>
-        </thead>
-        <tbody id='shotsBody'></tbody>
-    </table>
-    <div class='actions'>
-        <button id='saveShots'>Save shots</button>
-        <button id='confirmProject'>Confirm & render</button>
-    </div>
-    <div id='projectStatus' class='status'></div>
-</section>
+        <div class="header-controls">
+            <button id="darkModeToggle" class="icon-btn" title="切换深色模式">🌙</button>
+            <button id="refreshListBtn" class="secondary">🔄 刷新</button>
+        </div>
+    </header>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Image Preview Modal -->
+    <dialog id="imageModal">
+        <div class="modal-header">
+            <h3>图片预览</h3>
+            <button class="icon-btn" onclick="closeImageModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <img id="modalImage" class="modal-image" src="" alt="预览">
+        </div>
+    </dialog>
+
+    <!-- Project List Section -->
+    <section id="projectListSection">
+        <h2>项目列表</h2>
+        <div class="list-controls">
+            <div class="search-box">
+                <input type="text" id="projectSearch" placeholder="搜索主题...">
+            </div>
+            <select id="statusFilter" class="filter-select">
+                <option value="">全部状态</option>
+                <option value="draft">草稿</option>
+                <option value="processing">处理中</option>
+                <option value="rendered">已渲染</option>
+                <option value="failed">失败</option>
+            </select>
+            <button id="newProjectBtn">+ 新建项目</button>
+            <button id="importProjectBtn" class="secondary">📥 导入</button>
+            <input type="file" id="importFileInput" accept=".json">
+        </div>
+        <div id="projectListContent">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>主题</th>
+                        <th>状态</th>
+                        <th>场景数</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="projectsListBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Create Project Section -->
+    <section id="createProjectSection" style="display: none;">
+        <h2>新建项目</h2>
+        <form id="projectForm">
+            <label>主题 <input type="text" name="theme" required placeholder="例如：城市夜景"></label>
+            <label>故事基调 <input type="text" name="style" value="温暖理性" placeholder="旁白风格"></label>
+            <label>场景数（可选） <input type="number" name="scene_count" min="1" max="50" placeholder="由 AI 自动决定"></label>
+            <label>宽高比
+                <select name="aspect_ratio">
+                    <option value="16:9" selected>16:9 (横屏)</option>
+                    <option value="9:16">9:16 (竖屏)</option>
+                    <option value="4:3">4:3 (标准)</option>
+                    <option value="1:1">1:1 (方形)</option>
+                </select>
+            </label>
+            <label>图像风格提示 <input type="text" name="image_style" value="电影感真实" placeholder="视觉风格"></label>
+            <label>负面提示词 <input type="text" name="negative_prompt" value="低质量，模糊" placeholder="需要避免的内容"></label>
+            <label>默认 MiniMax voice_id <input type="text" name="voice_id" placeholder="可选，例如：male-qn-qingse"></label>
+            <label>语音速度 <input type="number" step="0.1" name="voice_speed" min="0.5" max="2" placeholder="1.0 = 正常"></label>
+            <div class="form-actions">
+                <button type="submit">生成分镜</button>
+                <button type="button" id="cancelCreateBtn" class="secondary">取消</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Project Detail Section -->
+    <section id="projectSection" style="display: none;">
+        <div class="flex justify-between items-center" style="margin-bottom: 15px;">
+            <h2 id="projectTitle">项目详情</h2>
+            <div class="actions-cell">
+                <button id="backToListBtn" class="secondary">← 返回</button>
+                <button id="exportProjectBtn" class="secondary">📤 导出</button>
+                <button id="deleteProjectBtn" class="danger">🗑 删除</button>
+            </div>
+        </div>
+
+        <div class="project-meta" id="projectMeta"></div>
+
+        <!-- Video Player -->
+        <div id="videoPlayerContainer" class="video-player hidden">
+            <video id="videoPlayer" controls></video>
+            <div class="form-actions" style="margin-top: 10px;">
+                <button id="downloadVideoBtn" class="secondary">⬇ 下载视频</button>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="progressContainer" class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText"></div>
+        </div>
+
+        <!-- Batch Actions -->
+        <div class="form-actions" style="margin-bottom: 15px;">
+            <button id="selectAllShotsBtn" class="secondary">全选</button>
+            <button id="deselectAllShotsBtn" class="secondary">取消全选</button>
+            <button id="regenerateSelectedBtn" class="secondary">🔄 重新生成选中</button>
+            <button id="saveShotsBtn">💾 保存更改</button>
+            <button id="confirmProjectBtn" class="secondary">▶ 渲染视频</button>
+        </div>
+
+        <!-- Shots Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 30px;"><input type="checkbox" id="selectAllCheckbox" class="shot-checkbox"></th>
+                    <th style="width: 40px;">#</th>
+                    <th style="width: 100px;">预览</th>
+                    <th>旁白</th>
+                    <th>图像提示</th>
+                    <th>负面提示</th>
+                    <th style="width: 200px;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="shotsBody"></tbody>
+        </table>
+    </section>
+
 <script>
+// ============================================================================
+// State Management
+// ============================================================================
 let currentProject = null;
-function renderProject(project) {
-    currentProject = project;
-    document.getElementById('projectSection').style.display = 'block';
-    const meta = `ID: ${project.id} | status: ${project.status}<br>` +
-        `audio: ${project.audio_path || 'N/A'} | video: ${project.video_path || 'N/A'}`;
-    document.getElementById('projectMeta').innerHTML = meta;
-    const tbody = document.getElementById('shotsBody');
-    tbody.innerHTML = '';
-    (project.shots || []).forEach((shot) => {
-        const row = document.createElement('tr');
-        row.innerHTML =
-            `<td>${shot.index}</td>` +
-            `<td><textarea data-field='script_text' data-id='${shot.id}'>${shot.script_text}</textarea></td>` +
-            `<td><textarea data-field='image_prompt' data-id='${shot.id}'>${shot.image_prompt}</textarea></td>` +
-            `<td><textarea data-field='negative_prompt' data-id='${shot.id}'>${shot.negative_prompt}</textarea></td>` +
-            `<td><input type='text' data-field='image_path' data-id='${shot.id}' value='${shot.image_path}' /></td>` +
-            `<td><input type='text' data-field='voice_id' data-id='${shot.id}' value='${shot.voice_id || ''}' placeholder='default' /></td>`;
-        tbody.appendChild(row);
-    });
+let allProjects = [];
+let selectedShotIds = new Set();
+
+// ============================================================================
+// Theme Management
+// ============================================================================
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
 }
-async function createProject(payload) {
-    const res = await fetch('/api/projects', {
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const newTheme = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+}
+
+function updateThemeIcon(theme) {
+    const btn = document.getElementById('darkModeToggle');
+    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+// ============================================================================
+// Toast Notifications
+// ============================================================================
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const icons = { success: '✓', error: '✕', info: 'ℹ' };
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type]}</span>
+        <span class="toast-message">${escapeHtml(message)}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function setLoading(btn, loading, originalText = '') {
+    if (loading) {
+        btn.disabled = true;
+        btn.classList.add('loading');
+        if (!btn.dataset.originalText) {
+            btn.dataset.originalText = btn.innerHTML;
+        }
+        btn.innerHTML = `<span class="spinner"></span><span class="btn-text">${btn.dataset.originalText}</span>`;
+    } else {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btn.innerHTML = btn.dataset.originalText || originalText;
+    }
+}
+
+function showProgress(text, percent = 0) {
+    const container = document.getElementById('progressContainer');
+    const fill = document.getElementById('progressFill');
+    const textEl = document.getElementById('progressText');
+    container.classList.add('active');
+    fill.style.width = `${percent}%`;
+    textEl.textContent = text;
+}
+
+function hideProgress() {
+    document.getElementById('progressContainer').classList.remove('active');
+}
+
+function formatDate(isoString) {
+    if (!isoString) return '无';
+    const date = new Date(isoString);
+    return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ============================================================================
+// API Functions
+// ============================================================================
+async function apiFetch(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+    });
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `HTTP ${response.status}`);
+    }
+    return response.json();
+}
+
+async function listProjects() {
+    return apiFetch('/api/projects');
+}
+
+async function getProject(id) {
+    return apiFetch(`/api/projects/${id}`);
+}
+
+async function createProject(data) {
+    return apiFetch('/api/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
 }
-async function fetchProject(id) {
-    const res = await fetch(`/api/projects/${id}`);
-    if (!res.ok) throw new Error('project not found');
-    return res.json();
-}
+
 async function updateShots(projectId, shots) {
-    const res = await fetch(`/api/projects/${projectId}/shots`, {
+    return apiFetch(`/api/projects/${projectId}/shots`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shots }),
     });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
 }
+
+async function deleteProject(id) {
+    return apiFetch(`/api/projects/${id}`, { method: 'DELETE' });
+}
+
+async function regenerateAllImages(projectId, missingOnly = true) {
+    return apiFetch(`/api/projects/${projectId}/images?missing_only=${missingOnly}`, {
+        method: 'POST',
+    });
+}
+
+async function regenerateShotImage(projectId, shotId) {
+    return apiFetch(`/api/projects/${projectId}/shots/${shotId}/image`, {
+        method: 'POST',
+    });
+}
+
 async function confirmProject(projectId) {
-    const res = await fetch(`/api/projects/${projectId}/confirm`, { method: 'POST' });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    return apiFetch(`/api/projects/${projectId}/confirm`, {
+        method: 'POST',
+    });
 }
-document.getElementById('projectForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const form = event.target;
+
+async function exportProject(id) {
+    return apiFetch(`/api/projects/${id}/export`);
+}
+
+async function importProject(data) {
+    return apiFetch('/api/projects/import', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+// ============================================================================
+// Project List
+// ============================================================================
+async function loadProjectList() {
+    try {
+        const result = await listProjects();
+        allProjects = result.projects || [];
+        renderProjectList();
+    } catch (error) {
+        showToast(`加载项目失败：${error.message}`, 'error');
+    }
+}
+
+function renderProjectList() {
+    const tbody = document.getElementById('projectsListBody');
+    const search = document.getElementById('projectSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    const filtered = allProjects.filter(p => {
+        const matchesSearch = !search || p.theme.toLowerCase().includes(search);
+        const matchesStatus = !statusFilter || p.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">未找到项目</td></tr>';
+        return;
+    }
+
+    // Status translations
+    const statusMap = {
+        'draft': '草稿',
+        'processing': '处理中',
+        'rendered': '已渲染',
+        'failed': '失败'
+    };
+
+    tbody.innerHTML = filtered.map(p => `
+        <tr>
+            <td>${p.id}</td>
+            <td>${escapeHtml(p.theme)}</td>
+            <td><span class="status-badge status-${p.status}">${statusMap[p.status] || p.status}</span></td>
+            <td>${p.scene_count}</td>
+            <td>${formatDate(p.created_at)}</td>
+            <td class="actions-cell">
+                <button onclick="viewProject(${p.id})">查看</button>
+                <button onclick="exportProjectById(${p.id})" class="secondary" title="导出">📤</button>
+                <button onclick="confirmDeleteProject(${p.id})" class="danger" title="删除">🗑</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function viewProject(id) {
+    loadProject(id);
+}
+
+function confirmDeleteProject(id) {
+    const project = allProjects.find(p => p.id === id);
+    if (confirm(`确定要删除项目"${project?.theme}"吗？此操作无法撤销。`)) {
+        deleteProjectById(id);
+    }
+}
+
+async function deleteProjectById(id) {
+    try {
+        await deleteProject(id);
+        showToast('项目已成功删除', 'success');
+        await loadProjectList();
+    } catch (error) {
+        showToast(`删除项目失败：${error.message}`, 'error');
+    }
+}
+
+async function exportProjectById(id) {
+    try {
+        const data = await exportProject(id);
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `project_${id}_export.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('项目已成功导出', 'success');
+    } catch (error) {
+        showToast(`导出项目失败：${error.message}`, 'error');
+    }
+}
+
+// ============================================================================
+// Import Project
+// ============================================================================
+document.getElementById('importProjectBtn').addEventListener('click', () => {
+    document.getElementById('importFileInput').click();
+});
+
+document.getElementById('importFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        setLoading(e.target.nextElementSibling || e.target, true, '导入中...');
+
+        const project = await importProject(data);
+        showToast('项目已成功导入', 'success');
+        await loadProjectList();
+        loadProject(project.id);
+    } catch (error) {
+        showToast(`导入项目失败：${error.message}`, 'error');
+    } finally {
+        document.getElementById('importFileInput').value = '';
+    }
+});
+
+// ============================================================================
+// Create Project
+// ============================================================================
+function showCreateProject() {
+    document.getElementById('projectListSection').classList.add('hidden');
+    document.getElementById('createProjectSection').style.display = 'block';
+    document.getElementById('projectSection').style.display = 'none';
+}
+
+function hideCreateProject() {
+    document.getElementById('projectListSection').classList.remove('hidden');
+    document.getElementById('createProjectSection').style.display = 'none';
+    document.getElementById('projectForm').reset();
+}
+
+document.getElementById('newProjectBtn').addEventListener('click', showCreateProject);
+document.getElementById('cancelCreateBtn').addEventListener('click', hideCreateProject);
+document.getElementById('backToListBtn').addEventListener('click', () => {
+    hideCreateProject();
+    document.getElementById('projectSection').style.display = 'none';
+    document.getElementById('projectListSection').classList.remove('hidden');
+    loadProjectList();
+});
+document.getElementById('refreshListBtn').addEventListener('click', loadProjectList);
+
+document.getElementById('projectForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector('button[type="submit"]');
+
     const payload = {
         theme: form.theme.value,
         style: form.style.value,
-        scene_count: Number(form.scene_count.value),
+        scene_count: form.scene_count.value ? Number(form.scene_count.value) : null,
         aspect_ratio: form.aspect_ratio.value,
         image_style: form.image_style.value,
         negative_prompt: form.negative_prompt.value,
     };
-    if (form.voice_id.value) payload.voice_setting = { voice_id: form.voice_id.value };
+
+    if (form.voice_id.value) {
+        payload.voice_setting = { voice_id: form.voice_id.value };
+    }
     if (form.voice_speed.value) {
         payload.voice_setting = payload.voice_setting || {};
         payload.voice_setting.speed = Number(form.voice_speed.value);
     }
-    const status = document.getElementById('formStatus');
-    status.textContent = 'Generating...';
-    status.classList.remove('error');
+
+    setLoading(btn, true);
     try {
         const project = await createProject(payload);
-        renderProject(project);
-        status.textContent = 'Storyboard ready. Fine-tune shots below.';
-    } catch (err) {
-        status.textContent = err.message;
-        status.classList.add('error');
+        showToast('分镜生成成功', 'success');
+        hideCreateProject();
+        loadProject(project.id);
+    } catch (error) {
+        showToast(`创建项目失败：${error.message}`, 'error');
+    } finally {
+        setLoading(btn, false);
     }
 });
-setTimeout(() => {
-    document.getElementById('loadProject').addEventListener('click', async () => {
-        const id = document.getElementById('loadProjectId').value;
-        if (!id) return;
-        const status = document.getElementById('formStatus');
-        status.textContent = 'Loading project...';
-        status.classList.remove('error');
-        try {
-            const project = await fetchProject(id);
-            renderProject(project);
-            status.textContent = 'Project loaded.';
-        } catch (err) {
-            status.textContent = err.message;
-            status.classList.add('error');
+
+// ============================================================================
+// Project Detail
+// ============================================================================
+async function loadProject(id) {
+    try {
+        showProgress('正在加载项目...', 50);
+        currentProject = await getProject(id);
+        renderProject(currentProject);
+        document.getElementById('projectListSection').classList.add('hidden');
+        document.getElementById('createProjectSection').style.display = 'none';
+        document.getElementById('projectSection').style.display = 'block';
+        hideProgress();
+    } catch (error) {
+        hideProgress();
+        showToast(`加载项目失败：${error.message}`, 'error');
+    }
+}
+
+function renderProject(project) {
+    document.getElementById('projectTitle').textContent = `项目 #${project.id}: ${project.theme}`;
+
+    // Status translations
+    const statusMap = {
+        'draft': '草稿',
+        'processing': '处理中',
+        'rendered': '已渲染',
+        'failed': '失败'
+    };
+
+    // Meta info
+    const metaHtml = `
+        <div class="meta-item"><span class="meta-label">ID</span><span class="meta-value">${project.id}</span></div>
+        <div class="meta-item"><span class="meta-label">状态</span><span class="meta-value"><span class="status-badge status-${project.status}">${statusMap[project.status] || project.status}</span></span></div>
+        <div class="meta-item"><span class="meta-label">主题</span><span class="meta-value">${escapeHtml(project.theme)}</span></div>
+        <div class="meta-item"><span class="meta-label">风格</span><span class="meta-value">${escapeHtml(project.style)}</span></div>
+        <div class="meta-item"><span class="meta-label">宽高比</span><span class="meta-value">${project.aspect_ratio}</span></div>
+        <div class="meta-item"><span class="meta-label">场景数</span><span class="meta-value">${project.scene_count}</span></div>
+        <div class="meta-item"><span class="meta-label">创建时间</span><span class="meta-value">${formatDate(project.created_at)}</span></div>
+    `;
+    document.getElementById('projectMeta').innerHTML = metaHtml;
+
+    // Video player
+    const videoContainer = document.getElementById('videoPlayerContainer');
+    const videoPlayer = document.getElementById('videoPlayer');
+    if (project.video_path) {
+        videoContainer.classList.remove('hidden');
+        videoPlayer.src = project.video_path;
+        videoContainer.classList.add('has-video');
+    } else {
+        videoContainer.classList.add('hidden');
+        videoPlayer.src = '';
+        videoContainer.classList.remove('has-video');
+    }
+
+    // Shots table
+    renderShotsTable(project);
+}
+
+function renderShotsTable(project) {
+    const tbody = document.getElementById('shotsBody');
+    selectedShotIds.clear();
+    updateSelectAllCheckbox();
+
+    tbody.innerHTML = (project.shots || []).map(shot => {
+        const imageExists = shot.image_path && shot.image_path !== '' && !shot.image_path.endsWith('.png') === false;
+        const imageUrl = imageExists ? `/assets/${shot.image_path.replace(/\\/g, '/')}` : '';
+
+        return `
+        <tr data-shot-id="${shot.id}">
+            <td><input type="checkbox" class="shot-checkbox shot-row-checkbox" data-shot-id="${shot.id}"></td>
+            <td>${shot.index}</td>
+            <td>
+                ${imageExists
+                    ? `<img src="${imageUrl}" class="image-preview" onclick="openImageModal('${imageUrl}')" alt="镜头 ${shot.index}">`
+                    : `<div class="image-preview placeholder">无图片</div>`
+                }
+            </td>
+            <td><textarea data-field="script_text" data-id="${shot.id}">${escapeHtml(shot.script_text)}</textarea></td>
+            <td><textarea data-field="image_prompt" data-id="${shot.id}">${escapeHtml(shot.image_prompt)}</textarea></td>
+            <td><textarea data-field="negative_prompt" data-id="${shot.id}">${escapeHtml(shot.negative_prompt || '')}</textarea></td>
+            <td>
+                <div class="actions-cell">
+                    <button onclick="regenerateShotImageById(${project.id}, ${shot.id})" class="secondary btn-icon" title="重新生成图片">🔄</button>
+                    <label class="file-label" title="上传图片">
+                        📤<input type="file" accept="image/*" onchange="uploadShotImage(${project.id}, ${shot.id}, this)">
+                    </label>
+                </div>
+            </td>
+        </tr>
+    `}).join('');
+
+    // Add checkbox event listeners
+    document.querySelectorAll('.shot-row-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                selectedShotIds.add(Number(e.target.dataset.shotId));
+            } else {
+                selectedShotIds.delete(Number(e.target.dataset.shotId));
+            }
+            updateSelectAllCheckbox();
+        });
+    });
+}
+
+function updateSelectAllCheckbox() {
+    const total = document.querySelectorAll('.shot-row-checkbox').length;
+    const checked = selectedShotIds.size;
+    const selectAllCb = document.getElementById('selectAllCheckbox');
+    selectAllCb.checked = total > 0 && checked === total;
+    selectAllCb.indeterminate = checked > 0 && checked < total;
+}
+
+// ============================================================================
+// Shot Actions
+// ============================================================================
+async function regenerateShotImageById(projectId, shotId) {
+    const btn = document.querySelector(`[data-shot-id="${shotId}"]`);
+    if (btn) setLoading(btn, true);
+
+    try {
+        showProgress(`正在重新生成镜头 ${shotId} 的图片...`, 50);
+        await regenerateShotImage(projectId, shotId);
+        showToast('图片已成功重新生成', 'success');
+        await loadProject(projectId);
+    } catch (error) {
+        showToast(`重新生成图片失败：${error.message}`, 'error');
+    } finally {
+        hideProgress();
+    }
+}
+
+async function uploadShotImage(projectId, shotId, input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    try {
+        showProgress('正在上传图片...', 50);
+
+        // 目前文件上传功能尚未实现
+        // 请手动将图片放到指定目录
+        showToast('文件上传功能尚未实现。请手动放置图片。', 'info');
+    } catch (error) {
+        showToast(`上传图片失败：${error.message}`, 'error');
+    } finally {
+        hideProgress();
+        input.value = '';
+    }
+}
+
+// ============================================================================
+// Batch Actions
+// ============================================================================
+document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.shot-row-checkbox').forEach(cb => {
+        cb.checked = checked;
+        const shotId = Number(cb.dataset.shotId);
+        if (checked) {
+            selectedShotIds.add(shotId);
+        } else {
+            selectedShotIds.delete(shotId);
         }
     });
-    document.getElementById('saveShots').addEventListener('click', async () => {
-        if (!currentProject) return;
-        const inputs = document.querySelectorAll('#shotsBody textarea, #shotsBody input');
+});
+
+document.getElementById('selectAllShotsBtn').addEventListener('click', () => {
+    document.querySelectorAll('.shot-row-checkbox').forEach(cb => cb.checked = true);
+    document.querySelectorAll('.shot-row-checkbox').forEach(cb => {
+        selectedShotIds.add(Number(cb.dataset.shotId));
+    });
+    updateSelectAllCheckbox();
+});
+
+document.getElementById('deselectAllShotsBtn').addEventListener('click', () => {
+    document.querySelectorAll('.shot-row-checkbox').forEach(cb => cb.checked = false);
+    selectedShotIds.clear();
+    updateSelectAllCheckbox();
+});
+
+document.getElementById('regenerateSelectedBtn').addEventListener('click', async () => {
+    if (selectedShotIds.size === 0) {
+        showToast('请至少选择一个镜头', 'info');
+        return;
+    }
+
+    const btn = document.getElementById('regenerateSelectedBtn');
+    setLoading(btn, true);
+
+    try {
+        const projectId = currentProject.id;
+        let completed = 0;
+        const total = selectedShotIds.size;
+
+        for (const shotId of selectedShotIds) {
+            showProgress(`正在重新生成图片 ${completed + 1}/${total}...`, (completed / total) * 100);
+            await regenerateShotImage(projectId, shotId);
+            completed++;
+        }
+
+        showProgress('完成！', 100);
+        showToast(`已重新生成 ${total} 张图片`, 'success');
+        await loadProject(projectId);
+    } catch (error) {
+        showToast(`重新生成图片失败：${error.message}`, 'error');
+    } finally {
+        hideProgress();
+        setLoading(btn, false);
+    }
+});
+
+// ============================================================================
+// Save & Render
+// ============================================================================
+document.getElementById('saveShotsBtn').addEventListener('click', async () => {
+    if (!currentProject) return;
+
+    const btn = document.getElementById('saveShotsBtn');
+    setLoading(btn, true);
+
+    try {
+        const inputs = document.querySelectorAll('#shotsBody textarea, #shotsBody input[type="text"]');
         const grouped = {};
-        inputs.forEach((input) => {
+        inputs.forEach(input => {
+            if (!input.dataset.field) return;
             const id = input.dataset.id;
             grouped[id] = grouped[id] || { id: Number(id) };
             grouped[id][input.dataset.field] = input.value;
         });
+
         const payload = Object.values(grouped);
-        const status = document.getElementById('projectStatus');
-        status.textContent = 'Saving shots...';
-        status.classList.remove('error');
+        showProgress('正在保存更改...', 50);
+
+        await updateShots(currentProject.id, payload);
+        showToast('更改已成功保存', 'success');
+        await loadProject(currentProject.id);
+    } catch (error) {
+        showToast(`保存失败：${error.message}`, 'error');
+    } finally {
+        hideProgress();
+        setLoading(btn, false);
+    }
+});
+
+document.getElementById('confirmProjectBtn').addEventListener('click', async () => {
+    if (!currentProject) return;
+
+    if (!confirm('开始渲染视频？这可能需要几分钟时间。')) {
+        return;
+    }
+
+    const btn = document.getElementById('confirmProjectBtn');
+    setLoading(btn, true);
+
+    try {
+        showProgress('正在初始化渲染...', 10);
+        const project = await confirmProject(currentProject.id);
+        showToast('渲染已成功启动', 'success');
+
+        // Poll for status updates
+        pollProjectStatus(project.id);
+    } catch (error) {
+        hideProgress();
+        setLoading(btn, false);
+        showToast(`启动渲染失败：${error.message}`, 'error');
+    }
+});
+
+async function pollProjectStatus(projectId) {
+    const maxAttempts = 120; // 最多2分钟
+    let attempts = 0;
+
+    const poll = async () => {
         try {
-            const project = await updateShots(currentProject.id, payload);
-            renderProject(project);
-            status.textContent = 'Saved.';
-        } catch (err) {
-            status.textContent = err.message;
-            status.classList.add('error');
+            const project = await getProject(projectId);
+
+            if (project.status === 'rendered') {
+                showProgress('渲染完成！', 100);
+                showToast('视频已成功渲染！', 'success');
+                await loadProject(projectId);
+                setLoading(document.getElementById('confirmProjectBtn'), false);
+                return;
+            }
+
+            if (project.status === 'failed') {
+                hideProgress();
+                showToast('渲染失败。请检查日志。', 'error');
+                setLoading(document.getElementById('confirmProjectBtn'), false);
+                return;
+            }
+
+            // Still processing
+            attempts++;
+            if (attempts < maxAttempts) {
+                const progress = Math.min((attempts / maxAttempts) * 100, 90);
+                showProgress(`渲染中... (检查状态)`, progress);
+                setTimeout(poll, 2000);
+            } else {
+                hideProgress();
+                showToast('渲染时间超出预期。请稍后再来查看。', 'info');
+                setLoading(document.getElementById('confirmProjectBtn'), false);
+            }
+        } catch (error) {
+            hideProgress();
+            setLoading(document.getElementById('confirmProjectBtn'), false);
+            showToast(`检查渲染状态时出错：${error.message}`, 'error');
         }
-    });
-    document.getElementById('confirmProject').addEventListener('click', async () => {
-        if (!currentProject) return;
-        const status = document.getElementById('projectStatus');
-        status.textContent = 'Rendering...';
-        status.classList.remove('error');
-        try {
-            const project = await confirmProject(currentProject.id);
-            renderProject(project);
-            status.textContent = 'Render finished.';
-        } catch (err) {
-            status.textContent = err.message;
-            status.classList.add('error');
-        }
-    });
-}, 0);
+    };
+
+    poll();
+}
+
+// ============================================================================
+// Export/Delete in Detail View
+// ============================================================================
+document.getElementById('exportProjectBtn').addEventListener('click', () => {
+    if (currentProject) {
+        exportProjectById(currentProject.id);
+    }
+});
+
+document.getElementById('deleteProjectBtn').addEventListener('click', () => {
+    if (currentProject) {
+        confirmDeleteProject(currentProject.id);
+    }
+});
+
+document.getElementById('downloadVideoBtn').addEventListener('click', () => {
+    if (currentProject && currentProject.video_path) {
+        const a = document.createElement('a');
+        a.href = currentProject.video_path;
+        a.download = `project_${currentProject.id}.mp4`;
+        a.click();
+    }
+});
+
+// ============================================================================
+// Image Modal
+// ============================================================================
+function openImageModal(url) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('modalImage');
+    img.src = url;
+    modal.showModal();
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').close();
+}
+
+document.getElementById('imageModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('imageModal')) {
+        closeImageModal();
+    }
+});
+
+// ============================================================================
+// Search & Filter
+// ============================================================================
+document.getElementById('projectSearch').addEventListener('input', renderProjectList);
+document.getElementById('statusFilter').addEventListener('change', renderProjectList);
+
+// ============================================================================
+// Dark Mode Toggle
+// ============================================================================
+document.getElementById('darkModeToggle').addEventListener('click', toggleTheme);
+
+// ============================================================================
+// Initialize
+// ============================================================================
+initTheme();
+loadProjectList();
 </script>
 </body>
 </html>
