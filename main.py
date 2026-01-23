@@ -33,6 +33,7 @@ from database import ProjectDatabase, ShotRecord
 from generation import StoryboardGenerator
 from minimax_speech import MiniMaxSpeechClient
 from comfyui_client import ComfyUIClient
+from volcengine_image import VolcengineImageClient
 
 # ============== 日志配置 ==============
 def setup_logging() -> logging.Logger:
@@ -456,6 +457,7 @@ def create_video_from_scenes(
     subtitle_bg_opacity: float = 0.5,
     test_mode: bool = False,
     test_duration: float = 10.0,
+    project_config: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     从场景创建视频
@@ -537,7 +539,8 @@ def create_video_from_scenes(
         elif image_clip.w < width:
             image_clip = image_clip.with_background_color(size=(width, height), color=(0, 0, 0), opacity=1)
 
-        effects_cfg = config.get('video_effects', {})
+        # 优先使用项目配置，否则使用全局配置
+        effects_cfg = (project_config or {}).get('video_effects') or config.get('video_effects', {})
         if effects_cfg.get('enable_movement', False):
             image_clip = apply_ken_burns_effect(
                 image_clip,
@@ -547,67 +550,77 @@ def create_video_from_scenes(
                 pan_y_range=effects_cfg.get('pan_y_range', 30),
             )
 
-        punctuation = '???,;:????""[]()????<>??,.?!'
-        display_text = script_text.rstrip(punctuation) or script_text
+        # 检查是否启用字幕（默认启用）
+        enable_subtitle = effects_cfg.get('enable_subtitle', True)
 
-        # 中文字体配置（按优先级尝试）
-        font_candidates = [
-            Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansSC-VariableFont_wght.ttf',
-            Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansSC-Regular.ttf',
-            Path(__file__).parent / 'assets' / 'fonts' / 'SimHei.ttf',
-            Path('C:/Windows/Fonts/msyh.ttc'),  # 微软雅黑
-            Path('C:/Windows/Fonts/simhei.ttf'),  # 黑体
-        ]
+        if enable_subtitle:
+            punctuation = '???,;:????""[]()????<>??,.?!'
+            display_text = script_text.rstrip(punctuation) or script_text
 
-        text_clip = None
-        for font_path in font_candidates:
-            if font_path.exists():
-                try:
-                    # 直接使用字体路径，不使用变量字体语法
-                    text_clip = TextClip(
-                        text=display_text,
-                        font_size=subtitle_fontsize,
-                        color='white',
-                        font=str(font_path),
-                        stroke_color='black',
-                        stroke_width=subtitle_stroke_width,
-                        text_align='center',
-                        method='caption',
-                        size=(int(width * 0.9), int(height * 0.3)),
-                        margin=(20, 20),
-                        bg_color=subtitle_bg_color,
-                    )
-                    break  # 成功创建，退出循环
-                except Exception as e:
-                    print(f'[WARN] 字体加载失败 {font_path.name}: {e}')
-                    continue
+            # 中文字体配置（按优先级尝试）
+            font_candidates = [
+                Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansSC-VariableFont_wght.ttf',
+                Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansSC-Regular.ttf',
+                Path(__file__).parent / 'assets' / 'fonts' / 'SimHei.ttf',
+                Path('C:/Windows/Fonts/msyh.ttc'),  # 微软雅黑
+                Path('C:/Windows/Fonts/simhei.ttf'),  # 黑体
+            ]
 
-        # 如果所有字体都失败，使用系统默认
-        if text_clip is None:
-            logger.warning('所有中文字体加载失败，使用系统默认字体（可能出现乱码）')
-            print('[WARN] 所有中文字体加载失败，使用系统默认字体（可能出现乱码）')
-            text_clip = TextClip(
-                text=display_text,
-                font_size=subtitle_fontsize,
-                color='white',
-                stroke_color='black',
-                stroke_width=subtitle_stroke_width,
-                text_align='center',
-                method='caption',
-                size=(int(width * 0.9), int(height * 0.3)),
-                margin=(20, 20),
-                bg_color=subtitle_bg_color,
-            )
+            text_clip = None
+            for font_path in font_candidates:
+                if font_path.exists():
+                    try:
+                        # 直接使用字体路径，不使用变量字体语法
+                        text_clip = TextClip(
+                            text=display_text,
+                            font_size=subtitle_fontsize,
+                            color='white',
+                            font=str(font_path),
+                            stroke_color='black',
+                            stroke_width=subtitle_stroke_width,
+                            text_align='center',
+                            method='caption',
+                            size=(int(width * 0.9), int(height * 0.3)),
+                            margin=(20, 20),
+                            bg_color=subtitle_bg_color,
+                        )
+                        break  # 成功创建，退出循环
+                    except Exception as e:
+                        print(f'[WARN] 字体加载失败 {font_path.name}: {e}')
+                        continue
 
-        # 应用字幕延迟（字幕整体向后延迟）
-        subtitle_delay = config.get('timing', {}).get('subtitle_delay', 0.0)
-        text_clip = text_clip.with_position(text_position).with_start(subtitle_delay).with_duration(duration)
-        composite_clip = CompositeVideoClip([image_clip, text_clip])
+            # 如果所有字体都失败，使用系统默认
+            if text_clip is None:
+                logger.warning('所有中文字体加载失败，使用系统默认字体（可能出现乱码）')
+                print('[WARN] 所有中文字体加载失败，使用系统默认字体（可能出现乱码）')
+                text_clip = TextClip(
+                    text=display_text,
+                    font_size=subtitle_fontsize,
+                    color='white',
+                    stroke_color='black',
+                    stroke_width=subtitle_stroke_width,
+                    text_align='center',
+                    method='caption',
+                    size=(int(width * 0.9), int(height * 0.3)),
+                    margin=(20, 20),
+                    bg_color=subtitle_bg_color,
+                )
+
+            # 应用字幕延迟（字幕整体向后延迟）
+            timing_cfg = (project_config or {}).get('timing') or config.get('timing', {})
+            subtitle_delay = timing_cfg.get('subtitle_delay', 0.0)
+            text_clip = text_clip.with_position(text_position).with_start(subtitle_delay).with_duration(duration)
+            composite_clip = CompositeVideoClip([image_clip, text_clip])
+        else:
+            # 字幕禁用时，只使用图片
+            composite_clip = CompositeVideoClip([image_clip])
+
         video_clips.append(composite_clip)
 
     logger.info(f'创建了 {len(video_clips)} 个视频片段')
 
-    transition_duration = config.get('timing', {}).get('transition_duration', 0.8)
+    timing_cfg = (project_config or {}).get('timing') or config.get('timing', {})
+    transition_duration = timing_cfg.get('transition_duration', 0.8)
     clips_with_transitions = []
     current_time = 0
     for i, clip in enumerate(video_clips):
@@ -642,17 +655,17 @@ def create_video_from_scenes(
     final_audio = CompositeAudioClip(audio_segments)
 
     # 添加背景音乐（可选）
-    audio_effects = config.get('audio_effects', {})
-    if audio_effects.get('enable_bgm'):
+    audio_effects_cfg = (project_config or {}).get('audio_effects_config') or config.get('audio_effects', {})
+    if audio_effects_cfg.get('enable_bgm'):
         logger.info(f'添加背景音乐...')
         total_duration = current_time
         bgm_audio = create_bgm_audio(
-            bgm_path=audio_effects.get('bgm_path', 'assets/audio/background_music.mp3'),
+            bgm_path=audio_effects_cfg.get('bgm_path', 'assets/audio/background_music.mp3'),
             duration=total_duration,
-            volume=audio_effects.get('bgm_volume', 0.3),
-            loop=audio_effects.get('bgm_loop', True),
-            fadein=audio_effects.get('bgm_fadein', 2.0),
-            fadeout=audio_effects.get('bgm_fadeout', 3.0),
+            volume=audio_effects_cfg.get('bgm_volume', 0.3),
+            loop=audio_effects_cfg.get('bgm_loop', True),
+            fadein=audio_effects_cfg.get('bgm_fadein', 2.0),
+            fadeout=audio_effects_cfg.get('bgm_fadeout', 3.0),
         )
         if bgm_audio is not None:
             final_audio = CompositeAudioClip([final_audio, bgm_audio])
@@ -700,6 +713,12 @@ class VideoProjectWorkflow:
             self.comfy_client = ComfyUIClient(comfy_config)
             self.auto_image_default = bool(comfy_config.get('enable_auto_generate', False))
 
+        # 火山引擎生图客户端
+        volcengine_image_config = config_data.get('volcengine_image', {})
+        self.volcengine_image_client = None
+        if volcengine_image_config.get('enable', False):
+            self.volcengine_image_client = VolcengineImageClient(volcengine_image_config)
+
     def _merge_voice(self, override: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         base = dict(self.config.get('minimax_speech', {}).get('voice_setting', {}))
         if override:
@@ -727,6 +746,27 @@ class VideoProjectWorkflow:
             base['channel'] = int(base['channel'])
         return base
 
+    def _merge_video_effects(self, override: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """合并视频效果配置"""
+        base = dict(self.config.get('video_effects', {}))
+        if override:
+            base.update({k: v for k, v in override.items() if v is not None})
+        return base
+
+    def _merge_audio_effects(self, override: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """合并音频效果配置（BGM等）"""
+        base = dict(self.config.get('audio_effects', {}))
+        if override:
+            base.update({k: v for k, v in override.items() if v is not None})
+        return base
+
+    def _merge_timing(self, override: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """合并时间配置"""
+        base = dict(self.config.get('timing', {}))
+        if override:
+            base.update({k: v for k, v in override.items() if v is not None})
+        return base
+
     def get_project(self, project_id: int) -> Dict[str, Any]:
         project = self.db.get_project(project_id, include_shots=True)
         if not project:
@@ -739,7 +779,7 @@ class VideoProjectWorkflow:
     def create_project(
         self,
         *,
-        theme: str,
+        theme: Optional[str],
         style: Optional[str],
         aspect_ratio: str,
         scene_count: Optional[int] = None,
@@ -749,10 +789,22 @@ class VideoProjectWorkflow:
         audio_setting: Optional[Dict[str, Any]],
         skip_insight: bool = False,
         insight_text: Optional[str] = None,
+        video_effects: Optional[Dict[str, Any]] = None,
+        audio_effects: Optional[Dict[str, Any]] = None,
+        timing: Optional[Dict[str, Any]] = None,
+        llm_settings: Optional[Dict[str, Any]] = None,
+        image_settings: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         script_style = style or DEFAULT_STORY_TONE
         image_style_value = image_style or DEFAULT_IMAGE_STYLE
         negative_prompt_value = negative_prompt or DEFAULT_NEGATIVE_PROMPT
+
+        # 保存 LLM 和图像生成设置供后续使用
+        self._llm_settings = llm_settings
+        self._image_settings = image_settings
+
+        # 如果有自定义文案但没有主题，使用默认主题名
+        effective_theme = theme or "自定义文案项目"
 
         # 确定使用哪个洞察文案（优先级：用户文案 > AI生成 > 跳过）
         insight_data = None
@@ -761,8 +813,8 @@ class VideoProjectWorkflow:
         if insight_text:
             insight_data = insight_text
             logger.info(f"使用用户提供的洞察文案: {insight_data[:100]}...")
-        # 优先级 2: AI 生成（如果未跳过）
-        elif not skip_insight:
+        # 优先级 2: AI 生成（如果未跳过且有主题）
+        elif not skip_insight and theme:
             logger.info(f"正在为主题 '{theme}' 生成社会洞察...")
             try:
                 insight_data = self.storyboard_generator.generate_insight(
@@ -778,7 +830,7 @@ class VideoProjectWorkflow:
             logger.info("跳过洞察生成，直接生成分镜")
 
         storyboard = self.storyboard_generator.generate_storyboard(
-            theme=theme,
+            theme=effective_theme,
             style=script_style,
             scene_count=scene_count,  # 可为 None，让 LLM 自定
             image_style=image_style_value,
@@ -797,13 +849,19 @@ class VideoProjectWorkflow:
             'audio_setting': self._merge_audio(audio_setting),
             'insight': insight_data,
             'storyboard_meta': {
-                'title': storyboard.get('title', theme),
+                'title': storyboard.get('title', effective_theme),
                 'voice_tone': storyboard.get('voice_tone', script_style),
             },
+            # 新增：视频效果配置（合并用户配置和默认配置）
+            'video_effects': self._merge_video_effects(video_effects),
+            # 新增：音频效果配置（合并用户配置和默认配置）
+            'audio_effects_config': self._merge_audio_effects(audio_effects),
+            # 新增：时间配置（合并用户配置和默认配置）
+            'timing': self._merge_timing(timing),
         }
 
         project_id = self.db.create_project(
-            theme=theme,
+            theme=effective_theme,
             style=script_style,
             aspect_ratio=aspect_ratio or DEFAULT_ASPECT_RATIO,
             scene_count=actual_count,  # 保存实际数量
@@ -836,8 +894,13 @@ class VideoProjectWorkflow:
         return self.get_project(project_id)
 
     def generate_images_for_project(self, project_id: int, missing_only: bool = True) -> Dict[str, Any]:
-        if not self.comfy_client or not self.comfy_client.can_use():
-            raise ValueError('ComfyUI not configured or unavailable')
+        # 检查是否有可用的生图引擎
+        has_comfy = self.comfy_client and self.comfy_client.can_use()
+        has_volcengine = self.volcengine_image_client is not None
+
+        if not has_comfy and not has_volcengine:
+            raise ValueError('没有可用的生图引擎（ComfyUI 或火山引擎均未配置）')
+
         project = self.get_project(project_id)
         targets = []
         for shot in project.get('shots', []):
@@ -847,15 +910,28 @@ class VideoProjectWorkflow:
             targets.append((shot, image_path))
         if not targets:
             return project
+
+        # 优先使用火山引擎，其次使用 ComfyUI
         for shot, image_path in targets:
             prompt_text = shot.get('image_prompt') or project.get('config', {}).get('image_style', '')
             negative_text = shot.get('negative_prompt') or project.get('config', {}).get('negative_prompt', '')
-            print(f"[ComfyUI] generating shot {shot['index']} -> {image_path}")
-            self.comfy_client.generate_image(
-                prompt=prompt_text,
-                negative_prompt=negative_text,
-                output_path=image_path,
-            )
+
+            if has_volcengine:
+                print(f"[火山引擎] 生成镜头 {shot['index']} -> {image_path}")
+                image_data = self.volcengine_image_client.generate_image(
+                    prompt=prompt_text,
+                    negative_prompt=negative_text,
+                )
+                if image_data:
+                    image_path.parent.mkdir(parents=True, exist_ok=True)
+                    image_path.write_bytes(image_data)
+            elif has_comfy:
+                print(f"[ComfyUI] 生成镜头 {shot['index']} -> {image_path}")
+                self.comfy_client.generate_image(
+                    prompt=prompt_text,
+                    negative_prompt=negative_text,
+                    output_path=image_path,
+                )
         return self.get_project(project_id)
 
     def finalize_project(
@@ -968,6 +1044,8 @@ class VideoProjectWorkflow:
         try:
             resolution = get_resolution_from_config(project.get('aspect_ratio', DEFAULT_ASPECT_RATIO))
             logger.info(f'分辨率: {resolution}')
+            # 获取项目配置用于视频渲染
+            project_config = project.get('config', {})
             create_video_from_scenes(
                 audio_paths=audio_paths,
                 script_lines=script_lines_to_process,
@@ -977,6 +1055,7 @@ class VideoProjectWorkflow:
                 resolution=resolution,
                 test_mode=test_mode,
                 test_duration=test_duration,
+                project_config=project_config,
             )
             self.db.update_project(
                 project_id,
@@ -1023,8 +1102,11 @@ class VideoProjectWorkflow:
 
     def generate_single_shot_image(self, project_id: int, shot_id: int) -> Dict[str, Any]:
         """Regenerate image for a single shot."""
-        if not self.comfy_client or not self.comfy_client.can_use():
-            raise ValueError('ComfyUI not configured or unavailable')
+        has_comfy = self.comfy_client and self.comfy_client.can_use()
+        has_volcengine = self.volcengine_image_client is not None
+
+        if not has_comfy and not has_volcengine:
+            raise ValueError('没有可用的生图引擎（ComfyUI 或火山引擎均未配置）')
 
         project = self.get_project(project_id)
         shot = None
@@ -1041,11 +1123,21 @@ class VideoProjectWorkflow:
         negative_text = shot.get('negative_prompt') or project.get('config', {}).get('negative_prompt', '')
 
         logger.info(f'Regenerating image for shot {shot["index"]} in project {project_id}')
-        self.comfy_client.generate_image(
-            prompt=prompt_text,
-            negative_prompt=negative_text,
-            output_path=image_path,
-        )
+
+        if has_volcengine:
+            image_data = self.volcengine_image_client.generate_image(
+                prompt=prompt_text,
+                negative_prompt=negative_text,
+            )
+            if image_data:
+                image_path.parent.mkdir(parents=True, exist_ok=True)
+                image_path.write_bytes(image_data)
+        elif has_comfy:
+            self.comfy_client.generate_image(
+                prompt=prompt_text,
+                negative_prompt=negative_text,
+                output_path=image_path,
+            )
         return self.get_project(project_id)
 
     def export_project(self, project_id: int) -> Dict[str, Any]:
@@ -1125,7 +1217,7 @@ def get_workflow() -> VideoProjectWorkflow:
 
 
 class ProjectCreateRequest(BaseModel):
-    theme: str
+    theme: Optional[str] = None  # 当提供 insight_text 时可选
     style: Optional[str] = None
     image_style: Optional[str] = None
     negative_prompt: Optional[str] = None
@@ -1135,6 +1227,16 @@ class ProjectCreateRequest(BaseModel):
     audio_setting: Optional[Dict[str, Any]] = None
     insight_text: Optional[str] = None
     skip_insight: bool = False
+    # 视频效果配置
+    video_effects: Optional[Dict[str, Any]] = None
+    # 音频效果配置
+    audio_effects: Optional[Dict[str, Any]] = None
+    # 时间配置
+    timing: Optional[Dict[str, Any]] = None
+    # 大语言模型配置
+    llm_settings: Optional[Dict[str, Any]] = None
+    # 生图模型配置
+    image_settings: Optional[Dict[str, Any]] = None
 
 
 class ShotUpdate(BaseModel):
@@ -1187,6 +1289,9 @@ def api_get_project(project_id: int):
 @app.post('/api/projects')
 def api_create_project(payload: ProjectCreateRequest):
     workflow = get_workflow()
+    # 验证：如果没有 insight_text，则 theme 必填
+    if not payload.insight_text and not payload.theme:
+        raise HTTPException(status_code=400, detail='主题(theme)为必填项，除非提供了自定义文案(insight_text)')
     try:
         return workflow.create_project(
             theme=payload.theme,
@@ -1199,6 +1304,11 @@ def api_create_project(payload: ProjectCreateRequest):
             audio_setting=payload.audio_setting,
             insight_text=payload.insight_text,
             skip_insight=payload.skip_insight,
+            video_effects=payload.video_effects,
+            audio_effects=payload.audio_effects,
+            timing=payload.timing,
+            llm_settings=payload.llm_settings,
+            image_settings=payload.image_settings,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -1291,7 +1401,7 @@ def api_import_project(payload: ProjectImportRequest):
         raise HTTPException(status_code=400, detail=str(exc))
 
 
-@app.get('/assets/{asset_type:path]')
+@app.get('/assets/{asset_type:path}')
 def api_serve_asset(asset_type: str):
     """Serve static assets (images, videos, audio)."""
     # Construct the full path
@@ -1318,6 +1428,15 @@ def api_serve_asset(asset_type: str):
         media_type = 'application/octet-stream'
 
     return FileResponse(file_path, media_type=media_type)
+
+
+@app.get('/outputs/{filename:path}')
+def api_serve_output(filename: str):
+    """Serve output videos."""
+    file_path = Path(__file__).parent / 'outputs' / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail='Output not found')
+    return FileResponse(file_path, media_type='video/mp4')
 
 
 def main():
@@ -1387,14 +1506,18 @@ def main():
     logger.info(f'项目 #{project["id"]} 创建成功')
 
     if args.auto_images:
-        if not workflow.comfy_client or not workflow.comfy_client.can_use():
-            logger.warning('ComfyUI 未配置，无法自动生成图片')
-            print('[WARN] ComfyUI 未配置，无法自动生成图片。')
+        has_comfy = workflow.comfy_client and workflow.comfy_client.can_use()
+        has_volcengine = workflow.volcengine_image_client is not None
+
+        if not has_comfy and not has_volcengine:
+            logger.warning('没有可用的生图引擎，无法自动生成图片')
+            print('[WARN] 没有可用的生图引擎（ComfyUI 或火山引擎均未配置）')
         else:
-            logger.info('使用 ComfyUI 为所有分镜生成图片...')
-            print('[ComfyUI] 正在为所有分镜生成图片...')
+            engine_name = '火山引擎' if has_volcengine else 'ComfyUI'
+            logger.info(f'使用 {engine_name} 为所有分镜生成图片...')
+            print(f'[{engine_name}] 正在为所有分镜生成图片...')
             project = workflow.generate_images_for_project(project['id'], missing_only=False)
-            logger.info(f'图片生成完成')
+            logger.info('图片生成完成')
 
     print(f"Created project #{project['id']} in draft status")
     print('Planned image paths:')
@@ -1413,10 +1536,13 @@ def main():
         print(f"Run python main.py --project-id {project['id']} after you have assets ready.")
         return
 
-    # Auto-generate missing images before rendering (if ComfyUI is configured)
-    if workflow.comfy_client and workflow.comfy_client.can_use():
+    # Auto-generate missing images before rendering (if image engine is configured)
+    has_comfy = workflow.comfy_client and workflow.comfy_client.can_use()
+    has_volcengine = workflow.volcengine_image_client is not None
+    if has_comfy or has_volcengine:
+        engine_name = '火山引擎' if has_volcengine else 'ComfyUI'
         logger.info('检查并生成缺失的分镜图片...')
-        print('[ComfyUI] 正在检查并生成缺失的分镜图片...')
+        print(f'[{engine_name}] 正在检查并生成缺失的分镜图片...')
         project = workflow.generate_images_for_project(project['id'], missing_only=True)
 
     logger.info(f'开始渲染项目 #{project["id"]}')

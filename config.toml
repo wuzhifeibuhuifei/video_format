@@ -27,10 +27,10 @@ chars_per_second = 0.25
 min_duration = 2.0
 
 # 最大分镜时长（秒）
-max_duration = 15.0
+max_duration = 8.0
 
 # 转场效果时长（秒）
-transition_duration = 0.5
+transition_duration = 0.1
 
 # 字幕整体延迟（秒），正值表示字幕整体向后延迟
 subtitle_delay = 0
@@ -41,19 +41,22 @@ enable_movement = true
 
 # 缩放效果：场景结束时的放大比例（1.0 = 无缩放，1.15 = 放大15%）
 # 抖音短视频建议：1.12-1.18 之间，更强的视觉冲击
-zoom_ratio = 1.15
+zoom_ratio = 1.12
 
 # 平移效果：水平移动距离（像素，正数向右，负数向左）
 # 抖音短视频建议：50-80 像素，增强动感
-pan_x_range = 60
+pan_x_range = 50
 
 # 平移效果：垂直移动距离（像素，正数向下，负数向上）
 # 抖音短视频建议：50-80 像素，增强动感
-pan_y_range = 60
+pan_y_range = 50
 
 # 运动模式："random" | "zoom_in" | "zoom_out" | "pan_left" | "pan_right" | "pan_up" | "pan_down"
 # 抖音短视频建议：使用 "zoom_in" 制造紧迫感，或 "random" 增加变化
 movement_type = "zoom_in"
+
+# 是否显示字幕
+enable_subtitle = false
 
 [audio_effects]
 # 是否启用背景音乐
@@ -64,7 +67,7 @@ bgm_path = "assets/audio/background_music.mp3"
 
 # 背景音乐音量（0.0-1.0）
 # 建议：知识类视频使用 0.15-0.25，避免喧宾夺主
-bgm_volume = 0.3
+bgm_volume = 0.2
 
 # 是否循环播放背景音乐（如果BGM短于视频时长）
 bgm_loop = true
@@ -100,11 +103,10 @@ model = "speech-2.6-hd"
 
 [minimax_speech.voice_setting]
 # 官方文档列出的 voice_id，例如 male-qn-qingse
-voice_id = "male-qn-qingse"
-speed = 1.0
+voice_id = "Chinese (Mandarin)_Unrestrained_Young_Man"
+speed = 1.1
 vol = 1.0
 pitch = 0.0
-emotion = "calm"
 
 [minimax_speech.audio_setting]
 sample_rate = 32000
@@ -117,10 +119,10 @@ aigc_watermark = false
 [workflow]
 # 默认分镜数量
 default_scene_count = 8
-# ??????
-default_story_tone = "????"
+# 默认故事风格
+default_story_tone = "真诚有态度"
 # 默认全局画面风格提示
-default_image_style = "电影级写实，柔和补光，富有层次感的调色"
+default_image_style = "简笔画风格，白色线条手绘，纯色克莱因蓝背景(#002FA7)，极简主义，干净利落的线条，儿童绘本插画感"
 # 默认负面提示词
 default_negative_prompt = "low quality, blurry, distorted anatomy, watermark"
 # 自动生成的项目图片目录（实际路径会以项目ID拼接子目录）
@@ -143,3 +145,36 @@ seed = 1024
 steps = 20
 cfg = 3.5
 workflow_file = "d:/comfyUI/workflows/image_z_image_turbo.json"
+
+[volcengine_image]
+# 火山引擎文生图 API 配置
+# 文档: https://www.volcengine.com/docs/6791/1361336
+
+# 是否启用火山引擎生图
+enable = true
+
+# === ARK SDK 配置（推荐方式）===
+# 使用 ARK Runtime SDK，更简洁
+use_ark_sdk = true
+# API 密钥（从火山引擎控制台获取）
+api_key = "16d75df9-fd0f-4270-bae4-133f1b984ec9"
+# 模型端点 ID（如 ep-xxx-seedream）
+model_endpoint = "doubao-seedream-4-5-251128"
+
+# === CVProcess API 配置（旧版方式）===
+api_url = "https://visual.volcengineapi.com"
+access_key = ""
+secret_key = ""
+# 模型版本: general_v2.0, general_v2.0_L, anime_v1.3 等
+model_version = "general_v2.0_L"
+
+# === 通用配置 ===
+# 图片尺寸（doubao-seedream 要求至少 3686400 像素，16:9 使用 2560x1440）
+width = 2560
+height = 1440
+# 生成参数
+scale = 7.0
+seed = -1
+ddim_steps = 25
+# 是否添加水印
+watermark = false

@@ -3,318 +3,396 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>视频工作台</title>
+    <title>视频工作坊控制台</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&display=swap');
+
         :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --bg-tertiary: #f0f0f0;
-            --text-primary: #333333;
-            --text-secondary: #666666;
-            --border: #dddddd;
-            --shadow: rgba(0, 0, 0, 0.1);
-            --accent: #4a90d9;
-            --accent-hover: #357abd;
-            --success: #0a7;
-            --error: #c00;
-            --warning: #f90;
-            --info: #09c;
-            --draft-badge: #9e9e9e;
-            --processing-badge: #2196f3;
-            --rendered-badge: #4caf50;
-            --failed-badge: #f44336;
+            --bg-body: #05060f;
+            --bg-panel: rgba(10, 13, 28, 0.92);
+            --bg-card: rgba(13, 18, 40, 0.85);
+            --bg-soft: rgba(255, 255, 255, 0.04);
+            --text-primary: #f5f7ff;
+            --text-secondary: #9da7c2;
+            --text-tertiary: #6c7390;
+            --accent: #ff8d3a;
+            --accent-strong: #ff3d81;
+            --border: rgba(255, 255, 255, 0.08);
+            --shadow-glow: 0 20px 45px rgba(255, 141, 58, 0.25);
+            --panel-radius: 28px;
+            --gradient: radial-gradient(circle at 20% 20%, rgba(255, 141, 58, 0.25), transparent 55%),
+                         radial-gradient(circle at 80% 0%, rgba(112, 201, 255, 0.2), transparent 45%),
+                         linear-gradient(145deg, #04050a 0%, #090b1a 60%, #05060f 100%);
         }
 
-        [data-theme="dark"] {
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --bg-tertiary: #383838;
-            --text-primary: #e0e0e0;
-            --text-secondary: #b0b0b0;
-            --border: #444444;
-            --shadow: rgba(0, 0, 0, 0.3);
+        [data-theme="light"] {
+            --bg-body: #fbf6ed;
+            --bg-panel: rgba(255, 255, 255, 0.85);
+            --bg-card: rgba(255, 255, 255, 0.65);
+            --bg-soft: rgba(5, 6, 15, 0.1);
+            --text-primary: #1f1f29;
+            --text-secondary: #474b63;
+            --text-tertiary: #767b92;
+            --accent: #db4b00;
+            --accent-strong: #c8175c;
+            --border: rgba(5, 6, 15, 0.12);
+            --shadow-glow: 0 25px 50px rgba(5, 6, 15, 0.15);
+            --gradient: radial-gradient(circle at 10% -10%, rgba(219, 75, 0, 0.15), transparent 40%),
+                         linear-gradient(145deg, #fefcf7 0%, #f6f1e6 55%, #f0ebdc 100%);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             margin: 0;
-            padding: 20px;
-            background: var(--bg-secondary);
+            min-height: 100vh;
+            font-family: 'Noto Sans SC', 'IBM Plex Sans', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: var(--gradient);
             color: var(--text-primary);
-            transition: background 0.3s, color 0.3s;
+            padding: 40px clamp(16px, 4vw, 60px);
+            position: relative;
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 15px 20px;
-            background: var(--bg-primary);
-            border-radius: 8px;
-            box-shadow: 0 2px 8px var(--shadow);
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255, 141, 58, 0.08), transparent 30%),
+                        linear-gradient(-145deg, rgba(111, 191, 255, 0.08), transparent 45%);
+            pointer-events: none;
+            z-index: 0;
         }
 
-        h1 { margin: 0; font-size: 1.5rem; }
-        h2 { margin-top: 0; font-size: 1.25rem; }
+        .grain {
+            position: fixed;
+            inset: 0;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"%3E%3Cpath fill="rgba(255,255,255,0.03)" d="M0 0h70v70H0zM70 70h70v70H70z"/%3E%3C/svg%3E');
+            mix-blend-mode: overlay;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 0;
+        }
 
-        .header-controls {
+        .orb {
+            position: fixed;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 61, 129, 0.35) 0%, transparent 70%);
+            filter: blur(60px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .orb-left {
+            top: -120px;
+            left: -80px;
+        }
+
+        .orb-right {
+            bottom: -160px;
+            right: -40px;
+            background: radial-gradient(circle, rgba(95, 180, 255, 0.35) 0%, transparent 70%);
+        }
+
+        main.command-center {
+            position: relative;
+            z-index: 1;
             display: flex;
-            gap: 10px;
-            align-items: center;
+            flex-direction: column;
+            gap: 32px;
+            max-width: 1260px;
+            margin: 0 auto;
+        }
+
+        .hero-panel {
+            background: var(--bg-panel);
+            border-radius: var(--panel-radius);
+            padding: clamp(24px, 5vw, 48px);
+            box-shadow: var(--shadow-glow);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+            border: 1px solid var(--border);
+        }
+
+        .hero-copy h1 {
+            font-family: 'Oxanium', 'Noto Sans SC', 'IBM Plex Sans', sans-serif;
+            font-size: clamp(32px, 5vw, 52px);
+            margin: 8px 0 12px;
+            letter-spacing: 0.04em;
+        }
+
+        .hero-copy .lede {
+            max-width: 520px;
+            color: var(--text-secondary);
+        }
+
+        .hero-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hero-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            align-items: start;
+        }
+
+        .status-block {
+            background: var(--bg-card);
+            border-radius: 18px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-block::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.09), transparent);
+            opacity: 0.3;
+        }
+
+        .status-block .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+        }
+
+        .status-block h3 {
+            margin: 6px 0 0;
+            font-size: 20px;
         }
 
         button {
-            padding: 8px 16px;
             border: none;
-            border-radius: 6px;
-            background: var(--accent);
-            color: white;
-            cursor: pointer;
+            border-radius: 999px;
+            padding: 10px 20px;
             font-size: 14px;
-            transition: all 0.2s;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--accent);
+            color: #05060f;
+            box-shadow: 0 12px 25px rgba(255, 141, 58, 0.25);
+            font-family: 'Noto Sans SC', 'IBM Plex Sans', 'Microsoft YaHei', sans-serif;
         }
 
         button:hover {
-            background: var(--accent-hover);
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px var(--shadow);
+            box-shadow: 0 18px 30px rgba(255, 141, 58, 0.35);
+        }
+
+        button.secondary {
+            background: var(--bg-soft);
+            color: var(--text-primary);
+            box-shadow: none;
+            border: 1px solid var(--border);
+        }
+
+        button.secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        button.danger {
+            background: transparent;
+            color: #ff677d;
+            border: 1px solid rgba(255, 103, 125, 0.6);
+            box-shadow: none;
+        }
+
+        button.icon-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            padding: 0;
+            font-size: 20px;
+            background: var(--bg-soft);
+            color: var(--text-primary);
+            box-shadow: none;
         }
 
         button:disabled {
-            opacity: 0.6;
+            opacity: 0.55;
             cursor: not-allowed;
             transform: none;
         }
 
-        button.secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
+        .panel {
+            background: var(--bg-panel);
+            border-radius: var(--panel-radius);
+            padding: clamp(24px, 4vw, 36px);
+            border: 1px solid var(--border);
+            box-shadow: 0 30px 60px rgba(5, 6, 15, 0.35);
         }
 
-        button.secondary:hover {
-            background: var(--border);
-        }
-
-        button.danger {
-            background: var(--error);
-        }
-
-        button.danger:hover {
-            background: #a00;
-        }
-
-        button.icon-btn {
-            padding: 8px 12px;
-            background: transparent;
-            color: var(--text-primary);
-        }
-
-        button.icon-btn:hover {
-            background: var(--bg-tertiary);
-        }
-
-        section {
-            background: var(--bg-primary);
-            border-radius: 8px;
-            padding: 20px;
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
             margin-bottom: 20px;
-            box-shadow: 0 2px 8px var(--shadow);
-            animation: fadeIn 0.3s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .section-heading h2 {
+            margin: 4px 0 6px;
+            font-size: clamp(22px, 3vw, 32px);
         }
 
-        /* Project List Styles */
+        .section-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .section-actions.stack {
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .section-lead {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        .eyebrow {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-tertiary);
+            margin: 0;
+        }
+
         .list-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 12px;
         }
 
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-        }
-
-        .filter-select {
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 15px;
-        }
-
-        th, td {
-            border: 1px solid var(--border);
-            padding: 10px;
-            text-align: left;
-            vertical-align: middle;
-        }
-
-        th {
-            background: var(--bg-secondary);
-            font-weight: 600;
-        }
-
-        tr:hover {
-            background: var(--bg-secondary);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .status-draft { background: var(--draft-badge); color: white; }
-        .status-processing { background: var(--processing-badge); color: white; }
-        .status-rendered { background: var(--rendered-badge); color: white; }
-        .status-failed { background: var(--failed-badge); color: white; }
-
-        .actions-cell {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-
-        .actions-cell button {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-
-        /* Form Styles */
-        form label {
+        .list-controls .label {
             display: block;
-            margin-top: 15px;
-            font-weight: 500;
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
         }
 
         input[type="text"],
         input[type="number"],
-        textarea {
+        textarea,
+        select {
             width: 100%;
-            padding: 10px;
+            padding: 12px 14px;
+            border-radius: 16px;
             border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--bg-secondary);
+            background: var(--bg-card);
             color: var(--text-primary);
             font-size: 14px;
-            transition: border-color 0.2s;
+            transition: border 0.2s ease, background 0.2s ease;
         }
 
-        input:focus, textarea:focus {
+        input:focus,
+        textarea:focus,
+        select:focus {
             outline: none;
             border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         textarea {
-            min-height: 60px;
+            min-height: 80px;
             resize: vertical;
+            border-radius: 18px;
         }
 
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            flex-wrap: wrap;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
         }
 
-        /* Project Detail Styles */
+        th,
+        td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.04);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
         .project-meta {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: var(--bg-secondary);
-            border-radius: 6px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .meta-item {
-            display: flex;
-            flex-direction: column;
+            background: var(--bg-card);
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid var(--border);
         }
 
         .meta-label {
             font-size: 12px;
-            color: var(--text-secondary);
             text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-tertiary);
         }
 
         .meta-value {
-            font-weight: 600;
+            font-size: 18px;
+            margin-top: 6px;
         }
 
-        /* Video Player */
-        .video-player {
-            margin: 20px 0;
-            background: var(--bg-secondary);
-            border-radius: 8px;
+        .video-shell {
+            border-radius: 24px;
             overflow: hidden;
+            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.35);
+            margin-bottom: 28px;
         }
 
-        .video-player video {
+        .video-shell video {
             width: 100%;
-            max-height: 500px;
             display: block;
         }
 
-        .video-player.has-video {
-            padding: 15px;
-        }
-
-        /* Image Preview */
-        .image-preview {
-            width: 100px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 4px;
-            cursor: pointer;
-            border: 2px solid var(--border);
-            transition: border-color 0.2s;
-        }
-
-        .image-preview:hover {
-            border-color: var(--accent);
-        }
-
-        .image-preview.placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            font-size: 10px;
-        }
-
-        /* Progress Bar */
         .progress-container {
-            margin: 15px 0;
             display: none;
+            margin-bottom: 24px;
+            background: var(--bg-card);
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid var(--border);
         }
 
         .progress-container.active {
@@ -323,140 +401,117 @@
 
         .progress-bar {
             width: 100%;
-            height: 8px;
-            background: var(--bg-tertiary);
-            border-radius: 4px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
             overflow: hidden;
+            margin-bottom: 8px;
         }
 
         .progress-fill {
             height: 100%;
-            background: var(--accent);
-            transition: width 0.3s;
-            border-radius: 4px;
+            width: 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+            transition: width 0.3s ease;
         }
 
         .progress-text {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
-            margin-top: 5px;
         }
 
-        /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid var(--bg-primary);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 5px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        button.loading .spinner {
-            display: inline-block;
-        }
-
-        button.loading .btn-text {
-            opacity: 0.7;
-        }
-
-        /* Toast Notifications */
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 350px;
-        }
-
-        .toast {
-            padding: 12px 16px;
-            border-radius: 6px;
-            background: var(--bg-primary);
-            box-shadow: 0 4px 12px var(--shadow);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideIn 0.3s ease;
-            max-width: 100%;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .toast.success { border-left: 4px solid var(--success); }
-        .toast.error { border-left: 4px solid var(--error); }
-        .toast.info { border-left: 4px solid var(--info); }
-
-        .toast-icon { font-size: 18px; }
-        .toast-message { flex: 1; word-break: break-word; }
-        .toast-close {
-            background: none;
-            color: var(--text-secondary);
-            padding: 0;
-            font-size: 18px;
-            line-height: 1;
-        }
-
-        /* Modal */
-        dialog {
-            border: none;
-            border-radius: 8px;
-            padding: 0;
-            max-width: 90vw;
-            max-height: 90vh;
-            background: var(--bg-primary);
-            box-shadow: 0 8px 32px var(--shadow);
-        }
-
-        dialog::backdrop {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border);
+        .batch-controls {
             display: flex;
             justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .shots-table textarea {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .table-shell {
+            border-radius: 24px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        label.field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        label.field.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
             align-items: center;
         }
 
-        .modal-body {
-            padding: 20px;
-            overflow: auto;
-            max-height: 80vh;
+        .image-preview {
+            width: 90px;
+            height: 60px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: transform 0.2s ease, border 0.2s ease;
         }
 
-        .modal-image {
-            max-width: 100%;
-            max-height: 70vh;
-            display: block;
+        .image-preview:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
         }
 
-        /* File Input */
+        .image-preview.placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         input[type="file"] {
             display: none;
         }
 
         .file-label {
-            display: inline-block;
-            padding: 6px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             border: 1px dashed var(--border);
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 12px;
+            padding: 6px 12px;
             font-size: 12px;
-            transition: all 0.2s;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: border 0.2s ease, color 0.2s ease;
         }
 
         .file-label:hover {
@@ -464,80 +519,141 @@
             color: var(--accent);
         }
 
-        /* Shot Checkbox */
-        .shot-checkbox {
-            width: auto;
-            margin: 0;
+        #toastContainer {
+            position: fixed;
+            top: 32px;
+            right: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 99;
+            max-width: 360px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            header { flex-direction: column; gap: 10px; align-items: stretch; }
-            .header-controls { justify-content: space-between; }
-
-            table {
-                display: block;
-                overflow-x: auto;
-            }
-
-            .project-meta {
-                grid-template-columns: 1fr;
-            }
-
-            .form-actions {
-                flex-direction: column;
-            }
-
-            .form-actions button {
-                width: 100%;
-            }
-
-            #toastContainer {
-                left: 10px;
-                right: 10px;
-                max-width: none;
-            }
+        .toast {
+            background: var(--bg-panel);
+            border-radius: 18px;
+            padding: 14px 18px;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        /* Utility */
+        .toast.success { border-left-color: #00c896; }
+        .toast.error { border-left-color: #ff5f5f; }
+        .toast.info { border-left-color: #5ea0ff; }
+
+        .toast-message {
+            flex: 1;
+        }
+
+        dialog {
+            border: none;
+            border-radius: 24px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+            width: min(90vw, 640px);
+        }
+
+        dialog::backdrop {
+            background: rgba(1, 2, 10, 0.65);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-image {
+            width: 100%;
+            border-radius: 18px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .status-draft { background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); }
+        .status-processing { background: rgba(94, 160, 255, 0.2); color: #7bc1ff; }
+        .status-rendered { background: rgba(0, 200, 150, 0.2); color: #00c896; }
+        .status-failed { background: rgba(255, 95, 95, 0.2); color: #ff5f5f; }
+
         .hidden { display: none !important; }
-        .text-secondary { color: var(--text-secondary); }
-        .small { font-size: 12px; }
-        .flex { display: flex; }
-        .gap-2 { gap: 8px; }
-        .gap-3 { gap: 12px; }
-        .items-center { align-items: center; }
-        .justify-between { justify-content: space-between; }
-        .flex-wrap { flex-wrap: wrap; }
 
-        /* Action buttons in table */
-        .btn-icon {
-            padding: 4px 8px;
-            font-size: 16px;
-            line-height: 1;
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--accent);
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        button.loading .btn-text { opacity: 0.7; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 24px 12px; }
+            .hero-panel { grid-template-columns: 1fr; }
+            .section-actions { width: 100%; justify-content: flex-start; }
+            .table-shell { padding: 0; }
+            table { display: block; overflow-x: auto; }
+        }
+
+        /* 高级设置样式 */
+        .advanced-settings {
+            margin-top: 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0;
+        }
+        .advanced-settings summary {
+            padding: 14px 18px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            user-select: none;
+        }
+        .advanced-settings summary:hover {
+            color: var(--text-primary);
+        }
+        .advanced-settings[open] summary {
+            border-bottom: 1px solid var(--border);
+        }
+        .advanced-settings .form-grid {
+            padding: 0 18px 18px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <div>
-            <h1>视频工作台</h1>
-            <p class="text-secondary small">使用 AI 生成的分镜创建、管理和渲染视频项目</p>
-        </div>
-        <div class="header-controls">
-            <button id="darkModeToggle" class="icon-btn" title="切换深色模式">🌙</button>
-            <button id="refreshListBtn" class="secondary">🔄 刷新</button>
-        </div>
-    </header>
+    <div class="orb orb-left"></div>
+    <div class="orb orb-right"></div>
+    <div class="grain"></div>
 
-    <!-- Toast Container -->
     <div id="toastContainer"></div>
 
-    <!-- Image Preview Modal -->
     <dialog id="imageModal">
         <div class="modal-header">
-            <h3>图片预览</h3>
+            <h3>图像预览</h3>
             <button class="icon-btn" onclick="closeImageModal()">✕</button>
         </div>
         <div class="modal-body">
@@ -545,122 +661,306 @@
         </div>
     </dialog>
 
-    <!-- Project List Section -->
-    <section id="projectListSection">
-        <h2>项目列表</h2>
-        <div class="list-controls">
-            <div class="search-box">
-                <input type="text" id="projectSearch" placeholder="搜索主题...">
+    <main class="command-center">
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Neon Studio</p>
+                <h1>视频工作坊</h1>
+                <p class="lede">用 AI 驱动的分镜系统，快速调度主题、画面与语音，让灵感直接变成镜头。</p>
+                <div class="hero-actions">
+                    <button id="newProjectBtn">启动新项目</button>
+                    <button id="refreshListBtn" class="secondary">同步队列</button>
+                </div>
             </div>
-            <select id="statusFilter" class="filter-select">
-                <option value="">全部状态</option>
-                <option value="draft">草稿</option>
-                <option value="processing">处理中</option>
-                <option value="rendered">已渲染</option>
-                <option value="failed">失败</option>
-            </select>
-            <button id="newProjectBtn">+ 新建项目</button>
-            <button id="importProjectBtn" class="secondary">📥 导入</button>
-            <input type="file" id="importFileInput" accept=".json">
-        </div>
-        <div id="projectListContent">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>主题</th>
-                        <th>状态</th>
-                        <th>场景数</th>
-                        <th>创建时间</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="projectsListBody"></tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Create Project Section -->
-    <section id="createProjectSection" style="display: none;">
-        <h2>新建项目</h2>
-        <form id="projectForm">
-            <label>主题 <input type="text" name="theme" required placeholder="例如：城市夜景"></label>
-            <label>故事基调 <input type="text" name="style" value="温暖理性" placeholder="旁白风格"></label>
-            <label>场景数（可选） <input type="number" name="scene_count" min="1" max="50" placeholder="由 AI 自动决定"></label>
-            <label>宽高比
-                <select name="aspect_ratio">
-                    <option value="16:9" selected>16:9 (横屏)</option>
-                    <option value="9:16">9:16 (竖屏)</option>
-                    <option value="4:3">4:3 (标准)</option>
-                    <option value="1:1">1:1 (方形)</option>
-                </select>
-            </label>
-            <label>图像风格提示 <input type="text" name="image_style" value="电影感真实" placeholder="视觉风格"></label>
-            <label>负面提示词 <input type="text" name="negative_prompt" value="低质量，模糊" placeholder="需要避免的内容"></label>
-            <label>默认 MiniMax voice_id <input type="text" name="voice_id" placeholder="可选，例如：male-qn-qingse"></label>
-            <label>语音速度 <input type="number" step="0.1" name="voice_speed" min="0.5" max="2" placeholder="1.0 = 正常"></label>
-            <div class="form-actions">
-                <button type="submit">生成分镜</button>
-                <button type="button" id="cancelCreateBtn" class="secondary">取消</button>
+            <div class="hero-status">
+                <div class="status-block">
+                    <span class="label">实时状态</span>
+                    <strong>创意控制台</strong>
+                    <p>跟踪项目、镜头与渲染，一切在单页完成。</p>
+                </div>
+                <div class="status-block">
+                    <span class="label">生成模式</span>
+                    <h3>电影级分镜</h3>
+                    <small>语音、图像与视频一体化。</small>
+                </div>
+                <button id="darkModeToggle" class="icon-btn" title="切换主题">☾</button>
             </div>
-        </form>
-    </section>
+        </header>
 
-    <!-- Project Detail Section -->
-    <section id="projectSection" style="display: none;">
-        <div class="flex justify-between items-center" style="margin-bottom: 15px;">
-            <h2 id="projectTitle">项目详情</h2>
-            <div class="actions-cell">
-                <button id="backToListBtn" class="secondary">← 返回</button>
-                <button id="exportProjectBtn" class="secondary">📤 导出</button>
-                <button id="deleteProjectBtn" class="danger">🗑 删除</button>
+        <section id="projectListSection" class="panel project-list">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">项目总览</p>
+                    <h2>影片队列</h2>
+                    <p class="section-lead">搜索、筛选或导入配置，快速进入需要打磨的项目。</p>
+                </div>
+                <div class="section-actions">
+                    <button id="importProjectBtn" class="secondary">导入项目</button>
+                    <input type="file" id="importFileInput" accept=".json">
+                </div>
             </div>
-        </div>
-
-        <div class="project-meta" id="projectMeta"></div>
-
-        <!-- Video Player -->
-        <div id="videoPlayerContainer" class="video-player hidden">
-            <video id="videoPlayer" controls></video>
-            <div class="form-actions" style="margin-top: 10px;">
-                <button id="downloadVideoBtn" class="secondary">⬇ 下载视频</button>
+            <div class="list-controls">
+                <div class="control">
+                    <span class="label">搜索主题</span>
+                    <input type="text" id="projectSearch" placeholder="输入关键字...">
+                </div>
+                <div class="control">
+                    <span class="label">状态</span>
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">全部状态</option>
+                        <option value="draft">草稿</option>
+                        <option value="processing">处理中</option>
+                        <option value="rendered">已渲染</option>
+                        <option value="failed">失败</option>
+                    </select>
+                </div>
             </div>
-        </div>
-
-        <!-- Progress -->
-        <div id="progressContainer" class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+            <div id="projectListContent" class="table-shell">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>主题</th>
+                            <th>状态</th>
+                            <th>镜头数</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsListBody"></tbody>
+                </table>
             </div>
-            <div class="progress-text" id="progressText"></div>
-        </div>
+        </section>
 
-        <!-- Batch Actions -->
-        <div class="form-actions" style="margin-bottom: 15px;">
-            <button id="selectAllShotsBtn" class="secondary">全选</button>
-            <button id="deselectAllShotsBtn" class="secondary">取消全选</button>
-            <button id="regenerateSelectedBtn" class="secondary">🔄 重新生成选中</button>
-            <button id="saveShotsBtn">💾 保存更改</button>
-            <button id="confirmProjectBtn" class="secondary">▶ 渲染视频</button>
-        </div>
+        <section id="createProjectSection" class="panel create-panel" style="display: none;">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">向导</p>
+                    <h2>新建项目</h2>
+                    <p class="section-lead">清晰描述故事调性、画面与语音设定，生成更精准的分镜。</p>
+                </div>
+                <button id="cancelCreateBtn" class="secondary">返回列表</button>
+            </div>
+            <form id="projectForm">
+                <div class="form-grid">
+                    <label class="field">
+                        <span>主题 <small style="color: var(--text-tertiary)">（有自定义文案时可选）</small></span>
+                        <input type="text" name="theme" placeholder="例如：城市夜行">
+                    </label>
+                    <label class="field">
+                        <span>场景数（可选）</span>
+                        <input type="number" name="scene_count" min="1" max="50" placeholder="留空由 AI 决定">
+                    </label>
+                    <label class="field">
+                        <span>宽高比</span>
+                        <select name="aspect_ratio">
+                            <option value="16:9" selected>16:9 横屏</option>
+                            <option value="9:16">9:16 竖屏</option>
+                            <option value="4:3">4:3 标准</option>
+                            <option value="1:1">1:1 方形</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>图像风格预设</span>
+                        <select name="image_style_preset" onchange="applyImageStylePreset(this.value)">
+                            <option value="">自定义</option>
+                            <option value="简笔画风格，白色线条手绘，纯色克莱因蓝背景(#002FA7)，极简主义，干净利落的线条" selected>简笔画 · 克莱因蓝</option>
+                            <option value="简笔画风格，黑色线条手绘，纯白色背景，极简主义，儿童绘本插画感">简笔画 · 白底黑线</option>
+                            <option value="电影级写实，柔和补光，富有层次感的调色，电影感真实">电影写实风格</option>
+                            <option value="赛博朋克风格，霓虹灯光，未来科技感，高对比度">赛博朋克</option>
+                            <option value="水彩画风格，柔和色彩，艺术感，手绘质感">水彩艺术</option>
+                            <option value="日系动漫风格，明亮色彩，二次元，精致细节">日系动漫</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>图像风格提示</span>
+                        <input type="text" name="image_style" id="imageStyleInput" value="简笔画风格，白色线条手绘，纯色克莱因蓝背景" placeholder="视觉风格">
+                    </label>
+                    <label class="field">
+                        <span>负面提示</span>
+                        <input type="text" name="negative_prompt" value="低质感, 模糊" placeholder="需要避免的画面">
+                    </label>
+                    <label class="field">
+                        <span>语速</span>
+                        <input type="number" step="0.1" name="voice_speed" min="0.5" max="2" placeholder="1.0 = 正常">
+                    </label>
+                    <label class="field full">
+                        <span>自定义洞察文案（可选）</span>
+                        <textarea name="insight_text" placeholder="填入你希望直接使用的洞察文案，留空则由 AI 生成。"></textarea>
+                    </label>
+                </div>
 
-        <!-- Shots Table -->
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 30px;"><input type="checkbox" id="selectAllCheckbox" class="shot-checkbox"></th>
-                    <th style="width: 40px;">#</th>
-                    <th style="width: 100px;">预览</th>
-                    <th>旁白</th>
-                    <th>图像提示</th>
-                    <th>负面提示</th>
-                    <th style="width: 200px;">操作</th>
-                </tr>
-            </thead>
-            <tbody id="shotsBody"></tbody>
-        </table>
-    </section>
+                <!-- 高级设置（可折叠） -->
+                <details class="advanced-settings">
+                    <summary>高级设置</summary>
+                    <div class="form-grid" style="margin-top: 16px;">
+                        <!-- 大语言模型设置 -->
+                        <h4 style="grid-column: 1 / -1; margin: 8px 0 4px; color: var(--text-secondary);">大语言模型</h4>
+                        <label class="field">
+                            <span>模型名称</span>
+                            <input type="text" name="llm_model" placeholder="deepseek-v3-2-251201">
+                        </label>
+                        <label class="field">
+                            <span>Temperature</span>
+                            <input type="number" name="llm_temperature" step="0.05" min="0" max="2" placeholder="0.35">
+                        </label>
 
+                        <!-- 生图模型设置 -->
+                        <h4 style="grid-column: 1 / -1; margin: 16px 0 4px; color: var(--text-secondary);">生图模型</h4>
+                        <label class="field">
+                            <span>生图引擎</span>
+                            <select name="image_engine" onchange="toggleImageEngineOptions(this.value)">
+                                <option value="comfyui" selected>ComfyUI (本地)</option>
+                                <option value="volcengine">火山引擎 (ARK SDK)</option>
+                                <option value="volcengine_cv">火山引擎 (CVProcess)</option>
+                            </select>
+                        </label>
+                        <label class="field volcengine-option" style="display: none;">
+                            <span>模型端点 ID</span>
+                            <input type="text" name="volcengine_endpoint" placeholder="ep-xxx-seedream">
+                        </label>
+                        <label class="field">
+                            <span>图片宽度</span>
+                            <input type="number" name="image_width" step="64" min="512" max="2048" placeholder="1024">
+                        </label>
+                        <label class="field">
+                            <span>图片高度</span>
+                            <input type="number" name="image_height" step="64" min="512" max="2048" placeholder="1024">
+                        </label>
+                        <label class="field">
+                            <span>生成步数</span>
+                            <input type="number" name="image_steps" min="10" max="50" placeholder="25">
+                        </label>
+
+                        <!-- 视频效果 -->
+                        <h4 style="grid-column: 1 / -1; margin: 16px 0 4px; color: var(--text-secondary);">视频效果</h4>
+                        <label class="field">
+                            <span>启用镜头动效</span>
+                            <select name="enable_movement">
+                                <option value="true" selected>启用</option>
+                                <option value="false">禁用</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>运动模式</span>
+                            <select name="movement_type">
+                                <option value="random">随机</option>
+                                <option value="zoom_in" selected>缩放进入</option>
+                                <option value="zoom_out">缩放退出</option>
+                                <option value="pan_left">向左平移</option>
+                                <option value="pan_right">向右平移</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>缩放比例</span>
+                            <input type="number" name="zoom_ratio" step="0.01" min="1.0" max="1.5" placeholder="1.15">
+                        </label>
+                        <label class="field">
+                            <span>显示字幕</span>
+                            <select name="enable_subtitle">
+                                <option value="true" selected>启用</option>
+                                <option value="false">禁用</option>
+                            </select>
+                        </label>
+
+                        <!-- 音频效果 -->
+                        <h4 style="grid-column: 1 / -1; margin: 16px 0 4px; color: var(--text-secondary);">背景音乐</h4>
+                        <label class="field">
+                            <span>启用 BGM</span>
+                            <select name="enable_bgm">
+                                <option value="true" selected>启用</option>
+                                <option value="false">禁用</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>BGM 音量</span>
+                            <input type="number" name="bgm_volume" step="0.05" min="0" max="1" placeholder="0.3">
+                        </label>
+
+                        <!-- 时间配置 -->
+                        <h4 style="grid-column: 1 / -1; margin: 16px 0 4px; color: var(--text-secondary);">时间配置</h4>
+                        <label class="field">
+                            <span>最小场景时长(秒)</span>
+                            <input type="number" name="min_duration" step="0.5" min="1" max="10" placeholder="2.0">
+                        </label>
+                        <label class="field">
+                            <span>最大场景时长(秒)</span>
+                            <input type="number" name="max_duration" step="0.5" min="5" max="30" placeholder="15.0">
+                        </label>
+                        <label class="field">
+                            <span>转场时长(秒)</span>
+                            <input type="number" name="transition_duration" step="0.1" min="0" max="2" placeholder="0.5">
+                        </label>
+                    </div>
+                </details>
+
+                <div class="form-actions">
+                    <button type="submit">生成分镜</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="projectSection" class="panel project-detail" style="display: none;">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">项目详情</p>
+                    <h2 id="projectTitle">项目详情</h2>
+                    <p class="section-lead">逐条打磨镜头脚本、提示词与图像，实时跟踪渲染阶段。</p>
+                </div>
+                <div class="section-actions stack">
+                    <button id="backToListBtn" class="secondary">返回</button>
+                    <button id="exportProjectBtn" class="secondary">导出</button>
+                    <button id="deleteProjectBtn" class="danger">删除</button>
+                </div>
+            </div>
+
+            <div class="project-meta" id="projectMeta"></div>
+
+            <div id="videoPlayerContainer" class="video-shell hidden">
+                <video id="videoPlayer" controls></video>
+                <div class="form-actions">
+                    <button id="downloadVideoBtn" class="secondary">下载视频</button>
+                </div>
+            </div>
+
+            <div id="progressContainer" class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText"></div>
+            </div>
+
+            <div class="batch-controls">
+                <div>
+                    <button id="selectAllShotsBtn" class="secondary">全选镜头</button>
+                    <button id="deselectAllShotsBtn" class="secondary">清空选择</button>
+                </div>
+                <button id="regenerateSelectedBtn" class="secondary">批量重生图像</button>
+            </div>
+
+            <div class="table-shell">
+                <table class="shots-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllCheckbox"></th>
+                            <th>#</th>
+                            <th>视觉</th>
+                            <th>脚本</th>
+                            <th>画面提示</th>
+                            <th>负面提示</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shotsBody"></tbody>
+                </table>
+            </div>
+
+                <div class="form-actions">
+                    <button id="saveShotsBtn" class="secondary">保存改动</button>
+                    <button id="confirmProjectBtn">开始渲染</button>
+                </div>
+        </section>
+    </main>
 <script>
 // ============================================================================
 // State Management
@@ -673,7 +973,7 @@ let selectedShotIds = new Set();
 // Theme Management
 // ============================================================================
 function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme);
 }
@@ -977,14 +1277,25 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
     const form = e.target;
     const btn = form.querySelector('button[type="submit"]');
 
+    // 验证：主题和自定义文案至少填一个
+    const theme = form.theme.value.trim();
+    const insightText = form.insight_text.value.trim();
+    if (!theme && !insightText) {
+        showToast('请填写主题或自定义文案（至少填一项）', 'error');
+        return;
+    }
+
     const payload = {
-        theme: form.theme.value,
-        style: form.style.value,
+        theme: theme || null,
         scene_count: form.scene_count.value ? Number(form.scene_count.value) : null,
         aspect_ratio: form.aspect_ratio.value,
         image_style: form.image_style.value,
         negative_prompt: form.negative_prompt.value,
     };
+
+    if (insightText) {
+        payload.insight_text = insightText;
+    }
 
     if (form.voice_id.value) {
         payload.voice_setting = { voice_id: form.voice_id.value };
@@ -992,6 +1303,81 @@ document.getElementById('projectForm').addEventListener('submit', async (e) => {
     if (form.voice_speed.value) {
         payload.voice_setting = payload.voice_setting || {};
         payload.voice_setting.speed = Number(form.voice_speed.value);
+    }
+
+    // 高级设置：视频效果
+    const videoEffects = {};
+    if (form.enable_movement.value) {
+        videoEffects.enable_movement = form.enable_movement.value === 'true';
+    }
+    if (form.movement_type.value) {
+        videoEffects.movement_type = form.movement_type.value;
+    }
+    if (form.zoom_ratio.value) {
+        videoEffects.zoom_ratio = Number(form.zoom_ratio.value);
+    }
+    if (form.enable_subtitle.value) {
+        videoEffects.enable_subtitle = form.enable_subtitle.value === 'true';
+    }
+    if (Object.keys(videoEffects).length > 0) {
+        payload.video_effects = videoEffects;
+    }
+
+    // 高级设置：音频效果
+    const audioEffects = {};
+    if (form.enable_bgm.value) {
+        audioEffects.enable_bgm = form.enable_bgm.value === 'true';
+    }
+    if (form.bgm_volume.value) {
+        audioEffects.bgm_volume = Number(form.bgm_volume.value);
+    }
+    if (Object.keys(audioEffects).length > 0) {
+        payload.audio_effects = audioEffects;
+    }
+
+    // 高级设置：时间配置
+    const timing = {};
+    if (form.min_duration.value) {
+        timing.min_duration = Number(form.min_duration.value);
+    }
+    if (form.max_duration.value) {
+        timing.max_duration = Number(form.max_duration.value);
+    }
+    if (form.transition_duration.value) {
+        timing.transition_duration = Number(form.transition_duration.value);
+    }
+    if (Object.keys(timing).length > 0) {
+        payload.timing = timing;
+    }
+
+    // 高级设置：大语言模型
+    const llmSettings = {};
+    if (form.llm_model.value) {
+        llmSettings.model = form.llm_model.value;
+    }
+    if (form.llm_temperature.value) {
+        llmSettings.temperature = Number(form.llm_temperature.value);
+    }
+    if (Object.keys(llmSettings).length > 0) {
+        payload.llm_settings = llmSettings;
+    }
+
+    // 高级设置：生图模型
+    const imageSettings = {};
+    if (form.image_engine.value) {
+        imageSettings.engine = form.image_engine.value;
+    }
+    if (form.image_width.value) {
+        imageSettings.width = Number(form.image_width.value);
+    }
+    if (form.image_height.value) {
+        imageSettings.height = Number(form.image_height.value);
+    }
+    if (form.image_steps.value) {
+        imageSettings.steps = Number(form.image_steps.value);
+    }
+    if (Object.keys(imageSettings).length > 0) {
+        payload.image_settings = imageSettings;
     }
 
     setLoading(btn, true);
@@ -1053,7 +1439,8 @@ function renderProject(project) {
     const videoPlayer = document.getElementById('videoPlayer');
     if (project.video_path) {
         videoContainer.classList.remove('hidden');
-        videoPlayer.src = project.video_path;
+        const videoPath = project.video_path.replace(/\\/g, '/');
+        videoPlayer.src = `/${videoPath}`;
         videoContainer.classList.add('has-video');
     } else {
         videoContainer.classList.add('hidden');
@@ -1072,7 +1459,8 @@ function renderShotsTable(project) {
 
     tbody.innerHTML = (project.shots || []).map(shot => {
         const imageExists = shot.image_path && shot.image_path !== '' && !shot.image_path.endsWith('.png') === false;
-        const imageUrl = imageExists ? `/assets/${shot.image_path.replace(/\\/g, '/')}` : '';
+        const imagePath = shot.image_path ? shot.image_path.replace(/\\/g, '/') : '';
+        const imageUrl = imageExists ? `/${imagePath}` : '';
 
         return `
         <tr data-shot-id="${shot.id}">
@@ -1372,6 +1760,24 @@ document.getElementById('statusFilter').addEventListener('change', renderProject
 // Dark Mode Toggle
 // ============================================================================
 document.getElementById('darkModeToggle').addEventListener('click', toggleTheme);
+
+// ============================================================================
+// Image Style Preset
+// ============================================================================
+function applyImageStylePreset(value) {
+    const input = document.getElementById('imageStyleInput');
+    if (value) {
+        input.value = value;
+    }
+}
+
+function toggleImageEngineOptions(value) {
+    const volcengineOptions = document.querySelectorAll('.volcengine-option');
+    const showVolcengine = value === 'volcengine' || value === 'volcengine_cv';
+    volcengineOptions.forEach(el => {
+        el.style.display = showVolcengine ? 'flex' : 'none';
+    });
+}
 
 // ============================================================================
 // Initialize
