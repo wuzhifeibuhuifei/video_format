@@ -98,7 +98,13 @@ region = "cn-shanghai"
 [minimax_speech]
 # MiniMax 语音 API 信息
 api_url = "https://api.minimaxi.com/v1/t2a_v2"
+# 国内的api
 api_key = "sk-api-lV3wuqTOseuGfM5QAOTFi1HboXo6K07E0IqMRGQHnHBusugzZddZZlExt9W1fRbgPAo4m___AxoWW9aGYfSojUHV_EuQuNpUBMHy3s8KeiD24zoYWZ_r0ek"
+
+# 音色克隆 API 密钥（中国国内节点 minimaxi.com）
+# 如果未设置，将使用上面的 api_key
+clone_api_key = "sk-api-lV3wuqTOseuGfM5QAOTFi1HboXo6K07E0IqMRGQHnHBusugzZddZZlExt9W1fRbgPAo4m___AxoWW9aGYfSojUHV_EuQuNpUBMHy3s8KeiD24zoYWZ_r0ek"
+
 model = "speech-2.6-hd"
 
 [minimax_speech.voice_setting]
@@ -145,6 +151,33 @@ seed = 1024
 steps = 20
 cfg = 3.5
 workflow_file = "d:/comfyUI/workflows/image_z_image_turbo.json"
+
+[remotion]
+# Remotion 渲染服务配置
+enable = true
+# 渲染服务地址
+server_url = "http://127.0.0.1:3001"
+# 帧率
+fps = 24
+
+[volcengine_video]
+# 火山引擎视频生成 API 配置 (Doubao-Seedance)
+# 文档: https://www.volcengine.com/docs/82379/1520757
+
+# 是否启用视频生成
+enable = true
+
+# API 密钥（与图片生成共用）
+api_key = "16d75df9-fd0f-4270-bae4-133f1b984ec9"
+
+# 模型端点
+model_endpoint = "doubao-seedance-1-0-pro-fast-251015"
+
+# 轮询间隔（毫秒）
+poll_interval = 5000
+
+# 最大等待时间（毫秒）
+max_poll_time = 300000
 
 [volcengine_image]
 # 火山引擎文生图 API 配置

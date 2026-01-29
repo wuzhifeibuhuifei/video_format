@@ -11,3 +11,15 @@ wheels/
 
 # Temporary compiled files with suffix
 *.pyc.*
+
+# Generated assets (images, audio, videos)
+assets/
+
+# Generated video outputs
+outputs/
+
+# Node.js dependencies
+node_modules/
+frontend/node_modules/
+remotion-video/node_modules/
+remotion-video/server/node_modules/

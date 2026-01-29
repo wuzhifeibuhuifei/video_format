@@ -1,8 +1,0 @@
-[2026-01-21 19:24:57] [INFO] [VideoGen] 日志文件: D:\workspace\video_format_demo\logs\video_gen_20260121_192457.log
-[2026-01-21 19:24:57] [INFO] [VideoGen] ==================================================
-[2026-01-21 19:24:57] [INFO] [VideoGen] 视频生成工具启动
-[2026-01-21 19:24:57] [INFO] [VideoGen] ==================================================
-[2026-01-21 19:24:57] [DEBUG] [VideoGen] CLI 参数: {'theme': '越努力越焦虑', 'style': '励志', 'image_style': '电影级写实', 'negative_prompt': 'low quality, blurry, distorted anatomy, watermark', 'scene_count': 8, 'aspect_ratio': '16:9', 'voice_id': None, 'voice_speed': None, 'auto_confirm': True, 'auto_images': True, 'project_id': None, 'test': False, 'test_duration': 10.0}
-[2026-01-21 19:24:57] [INFO] [VideoGen] 创建新项目: theme=越努力越焦虑, scene_count=8
-[2026-01-21 19:25:38] [INFO] [VideoGen] 项目 #10 创建成功
-[2026-01-21 19:25:38] [INFO] [VideoGen] 使用 ComfyUI 为所有分镜生成图片...

@@ -1,0 +1,50 @@
+[2026-01-25 19:16:06] [INFO] [VideoGen] 日志文件: D:\workspace\video_format_demo\logs\video_gen_20260125_191606.log
+[2026-01-25 19:18:59] [INFO] [VideoGen] 正在为主题 '独居生活' 生成社会洞察...
+[2026-01-25 19:19:16] [INFO] [VideoGen] 洞察生成完成: **（画面：清晨空荡的房间，主角独自坐在窗边）**  
+你知道吗？独居第三年，我发现了最可怕的事。  
+
+不是孤独，而是习惯。  
+习惯沉默，习惯将就，习惯对自己说“算了”。  
+直到那天，镜子里的眼...
+[2026-01-25 19:19:48] [INFO] [VideoGen] LLM 生成了 8 个镜头
+[2026-01-25 19:36:32] [INFO] [VideoGen] Regenerating image for shot 1 in project 29
+[2026-01-25 19:51:50] [INFO] [VideoGen] 开始渲染项目 #29 (test_mode=False, test_duration=10.0s)
+[2026-01-25 19:51:50] [INFO] [VideoGen] 项目分镜数量: 8
+[2026-01-25 19:51:50] [INFO] [VideoGen] 开始合成语音（TTS）...，共 8 个分镜
+[2026-01-25 19:51:50] [INFO] [VideoGen] 正在生成分镜 #1 (index=1) 的语音: 独居第三年，最可怕的事发生了。...
+[2026-01-25 19:51:52] [INFO] [VideoGen] 分镜 #1 音频生成完成: assets\audio\generated\project_29_shot_1.mp3
+[2026-01-25 19:51:52] [INFO] [VideoGen] 正在生成分镜 #2 (index=2) 的语音: 不是孤独，而是习惯。...
+[2026-01-25 19:51:53] [INFO] [VideoGen] 分镜 #2 音频生成完成: assets\audio\generated\project_29_shot_2.mp3
+[2026-01-25 19:51:53] [INFO] [VideoGen] 正在生成分镜 #3 (index=3) 的语音: 直到那天，镜子里的眼神让我后背发凉。...
+[2026-01-25 19:51:54] [INFO] [VideoGen] 分镜 #3 音频生成完成: assets\audio\generated\project_29_shot_3.mp3
+[2026-01-25 19:51:54] [INFO] [VideoGen] 正在生成分镜 #4 (index=4) 的语音: 我决定做个实验。...
+[2026-01-25 19:51:55] [INFO] [VideoGen] 分镜 #4 音频生成完成: assets\audio\generated\project_29_shot_4.mp3
+[2026-01-25 19:51:55] [INFO] [VideoGen] 正在生成分镜 #5 (index=5) 的语音: 假装家里，住着理想中的自己。...
+[2026-01-25 19:51:57] [INFO] [VideoGen] 分镜 #5 音频生成完成: assets\audio\generated\project_29_shot_5.mp3
+[2026-01-25 19:51:57] [INFO] [VideoGen] 正在生成分镜 #6 (index=6) 的语音: 三个月后，推开门是属于自己的秩序感。...
+[2026-01-25 19:51:58] [INFO] [VideoGen] 分镜 #6 音频生成完成: assets\audio\generated\project_29_shot_6.mp3
+[2026-01-25 19:51:58] [INFO] [VideoGen] 正在生成分镜 #7 (index=7) 的语音: 原来独居，是生活给你的空白画布。...
+[2026-01-25 19:52:00] [INFO] [VideoGen] 分镜 #7 音频生成完成: assets\audio\generated\project_29_shot_7.mp3
+[2026-01-25 19:52:00] [INFO] [VideoGen] 正在生成分镜 #8 (index=8) 的语音: 别怕一个人住，怕的是你从未住进自己的生活。...
+[2026-01-25 19:52:01] [INFO] [VideoGen] 分镜 #8 音频生成完成: assets\audio\generated\project_29_shot_8.mp3
+[2026-01-25 19:52:01] [INFO] [VideoGen] 所有语音合成完成
+[2026-01-25 19:52:01] [INFO] [VideoGen] 分辨率: (1920, 1080)
+[2026-01-25 19:52:01] [INFO] [VideoGen] 开始创建视频: outputs\project_29.mp4
+[2026-01-25 19:52:01] [INFO] [VideoGen] 参数: fps=24, resolution=(1920, 1080), test_mode=False, test_duration=10.0
+[2026-01-25 19:52:01] [DEBUG] [VideoGen] 脚本数量: 8, 图片数量: 8, 音频数量: 8
+[2026-01-25 19:52:01] [INFO] [VideoGen] 从音频文件获取场景时长...
+[2026-01-25 19:52:02] [INFO] [VideoGen] 场景时长: [3.74, 3.31, 4.28, 1.48, 2.99, 4.25, 3.82, 4.32]
+[2026-01-25 19:52:03] [INFO] [VideoGen] 创建了 8 个视频片段
+[2026-01-25 19:52:03] [INFO] [VideoGen] 拼接音频片段...
+[2026-01-25 19:52:04] [INFO] [VideoGen] 添加背景音乐...
+[2026-01-25 19:52:04] [INFO] [VideoGen] 背景音乐添加成功
+[2026-01-25 19:52:04] [INFO] [VideoGen] 开始写入视频文件: outputs\project_29.mp4
+[2026-01-25 19:52:04] [INFO] [VideoGen] 视频总时长: 28.09 秒
+[2026-01-25 19:53:35] [INFO] [VideoGen] 视频写入完成: outputs\project_29.mp4
+[2026-01-25 19:53:35] [INFO] [VideoGen] 项目 #29 渲染完成!
+[2026-01-25 20:03:06] [INFO] [VideoGen] Regenerating image for shot 1 in project 29
+[2026-01-25 20:04:15] [INFO] [VideoGen] 使用用户提供的洞察文案: 到底熬过了多少夜晚？让刚踏入社会的你满心都是安稳。当你发现生活处处藏着风雨的时候，其实你的天真就已经退场了，而且肩上的责任只会越来越重。你收起了任性的脾气，也藏起了纯粹的欢喜。追梦人，曾经那个憧憬着远...
+[2026-01-25 20:04:41] [INFO] [VideoGen] LLM 生成了 8 个镜头
+[2026-01-25 20:05:43] [INFO] [VideoGen] 删除项目 #30: 自定义文案
+[2026-01-25 20:05:43] [INFO] [VideoGen] 删除图片目录: assets\images\projects\project_30
+[2026-01-25 20:05:43] [INFO] [VideoGen] 项目 #30 已删除
