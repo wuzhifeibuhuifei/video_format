@@ -13,7 +13,7 @@
     "@remotion/google-fonts": "^4.0.0",
     "@remotion/media": "^4.0.0",
     "@remotion/player": "^4.0.0",
-    "@remotion/transitions": "^4.0.0",
+    "@remotion/transitions": "^4.0.414",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "remotion": "^4.0.0"

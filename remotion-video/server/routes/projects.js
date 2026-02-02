@@ -3,6 +3,12 @@ import { ProjectDatabase } from '../lib/database.js';
 import { StoryboardGenerator } from '../lib/storyboard.js';
 import { getConfig } from '../lib/config.js';
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const serverRoot = path.join(__dirname, '..');
+const projectRoot = path.join(__dirname, '../../..');
 
 const router = Router();
 
@@ -107,6 +113,186 @@ router.delete('/:id', (req, res) => {
     db.deleteProject(id);
     res.json({ success: true });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 上传角色形象图片
+router.post('/:id/character-image', async (req, res) => {
+  const projectId = parseInt(req.params.id);
+
+  try {
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+
+    const project = db.getProject(projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const uploadedFile = req.files.image;
+    const ext = path.extname(uploadedFile.name) || '.png';
+    const fileName = `character_${projectId}${ext}`;
+    const relativePath = `assets/images/characters/${fileName}`;
+    const absolutePath = path.join(__dirname, '../', relativePath);
+
+    // 确保目录存在
+    const dir = path.dirname(absolutePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // 如果已有角色形象，先删除旧文件
+    if (project.character_image) {
+      const oldPath = path.join(__dirname, '../', project.character_image);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    // 保存新文件
+    await uploadedFile.mv(absolutePath);
+
+    // 更新数据库
+    db.updateProject(projectId, { character_image: relativePath });
+
+    console.log(`Character image uploaded for project ${projectId}: ${relativePath}`);
+    res.json(db.getProject(projectId));
+  } catch (err) {
+    console.error('Character image upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 删除角色形象图片
+router.delete('/:id/character-image', (req, res) => {
+  const projectId = parseInt(req.params.id);
+
+  try {
+    const project = db.getProject(projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    if (project.character_image) {
+      const imagePath = path.join(__dirname, '../', project.character_image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+      db.updateProject(projectId, { character_image: null });
+    }
+
+    console.log(`Character image deleted for project ${projectId}`);
+    res.json(db.getProject(projectId));
+  } catch (err) {
+    console.error('Character image delete error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 获取项目资产统计
+router.get('/:id/assets', (req, res) => {
+  const projectId = parseInt(req.params.id);
+
+  try {
+    const project = db.getProject(projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const getFileInfo = (relativePath) => {
+      if (!relativePath) return null;
+
+      const normalizedPath = `${relativePath}`.replace(/\\/g, '/');
+      const relativeNormalizedPath = normalizedPath.replace(/^\/+/, '');
+
+      const candidates = path.isAbsolute(normalizedPath)
+        ? [normalizedPath]
+        : [
+            path.join(serverRoot, relativeNormalizedPath),
+            path.join(projectRoot, relativeNormalizedPath),
+          ];
+
+      let foundPath = null;
+      for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+          foundPath = candidate;
+          break;
+        }
+      }
+
+      if (!foundPath) return null;
+
+      const stats = fs.statSync(foundPath);
+      return {
+        path: path.isAbsolute(normalizedPath) ? normalizedPath : relativeNormalizedPath,
+        size: stats.size,
+        exists: true,
+      };
+    };
+
+    // 收集各类资产
+    const assets = {
+      images: [],
+      audios: [],
+      videos: [],
+      characterImage: null,
+      finalVideo: null,
+    };
+
+    // 角色形象
+    if (project.character_image) {
+      assets.characterImage = getFileInfo(project.character_image);
+    }
+
+    // 最终视频
+    if (project.video_path) {
+      assets.finalVideo = getFileInfo(project.video_path);
+    }
+
+    // 分镜资产
+    if (project.shots) {
+      for (const shot of project.shots) {
+        // 图片
+        const imageInfo = getFileInfo(shot.image_path);
+        if (imageInfo) {
+          assets.images.push({ ...imageInfo, shotIndex: shot.display_index });
+        }
+
+        // 音频
+        const audioInfo = getFileInfo(shot.audio_path);
+        if (audioInfo) {
+          assets.audios.push({ ...audioInfo, shotIndex: shot.display_index });
+        }
+
+        // 视频
+        const videoInfo = getFileInfo(shot.video_path);
+        if (videoInfo) {
+          assets.videos.push({ ...videoInfo, shotIndex: shot.display_index });
+        }
+      }
+    }
+
+    // 计算统计信息
+    const calcTotal = (arr) => arr.reduce((sum, item) => sum + (item?.size || 0), 0);
+
+    const summary = {
+      images: { count: assets.images.length, totalSize: calcTotal(assets.images) },
+      audios: { count: assets.audios.length, totalSize: calcTotal(assets.audios) },
+      videos: { count: assets.videos.length, totalSize: calcTotal(assets.videos) },
+      characterImage: assets.characterImage ? { count: 1, totalSize: assets.characterImage.size } : { count: 0, totalSize: 0 },
+      finalVideo: assets.finalVideo ? { count: 1, totalSize: assets.finalVideo.size } : { count: 0, totalSize: 0 },
+    };
+
+    summary.total = {
+      count: summary.images.count + summary.audios.count + summary.videos.count + summary.characterImage.count + summary.finalVideo.count,
+      totalSize: summary.images.totalSize + summary.audios.totalSize + summary.videos.totalSize + summary.characterImage.totalSize + summary.finalVideo.totalSize,
+    };
+
+    res.json({ assets, summary });
+  } catch (err) {
+    console.error('Get project assets error:', err);
     res.status(500).json({ error: err.message });
   }
 });

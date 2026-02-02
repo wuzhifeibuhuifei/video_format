@@ -30,6 +30,8 @@ export class ProjectDatabase {
 
     // 迁移：添加视频相关字段到 shots 表
     this._migrateAddVideoFields();
+    // 迁移：添加角色形象字段到 projects 表
+    this._migrateAddCharacterImage();
 
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS shots (
@@ -43,6 +45,19 @@ export class ProjectDatabase {
         voice_id TEXT,
         duration REAL,
         FOREIGN KEY (project_id) REFERENCES projects(id)
+      )
+    `);
+
+    // 画面风格表
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS image_styles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        prompt TEXT NOT NULL,
+        negative_prompt TEXT DEFAULT '',
+        is_default INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `);
   }
@@ -77,10 +92,17 @@ export class ProjectDatabase {
 
   listProjects() {
     const projects = this.db.prepare('SELECT * FROM projects ORDER BY id DESC').all();
-    return projects.map(p => ({
-      ...p,
-      config: JSON.parse(p.config_json || '{}')
-    }));
+    return projects.map(p => {
+      // 获取第一个镜头的文案作为预览
+      const firstShot = this.db.prepare(
+        'SELECT script_text FROM shots WHERE project_id = ? ORDER BY display_index LIMIT 1'
+      ).get(p.id);
+      return {
+        ...p,
+        config: JSON.parse(p.config_json || '{}'),
+        preview_text: firstShot?.script_text || ''
+      };
+    });
   }
 
   updateProject(id, data) {
@@ -152,6 +174,58 @@ export class ProjectDatabase {
     this.db.prepare('DELETE FROM shots WHERE project_id = ?').run(projectId);
   }
 
+  // 画面风格操作
+  createImageStyle(data) {
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const stmt = this.db.prepare(`
+      INSERT INTO image_styles (name, prompt, negative_prompt, is_default, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      data.name,
+      data.prompt,
+      data.negative_prompt || '',
+      data.is_default ? 1 : 0,
+      now,
+      now
+    );
+    return result.lastInsertRowid;
+  }
+
+  listImageStyles() {
+    return this.db.prepare('SELECT * FROM image_styles ORDER BY id DESC').all();
+  }
+
+  getImageStyle(id) {
+    return this.db.prepare('SELECT * FROM image_styles WHERE id = ?').get(id);
+  }
+
+  updateImageStyle(id, data) {
+    const fields = [];
+    const values = [];
+    for (const [key, value] of Object.entries(data)) {
+      if (key === 'is_default') {
+        fields.push('is_default = ?');
+        values.push(value ? 1 : 0);
+      } else {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+    }
+    fields.push("updated_at = datetime('now')");
+    values.push(id);
+    const sql = `UPDATE image_styles SET ${fields.join(', ')} WHERE id = ?`;
+    this.db.prepare(sql).run(...values);
+  }
+
+  deleteImageStyle(id) {
+    this.db.prepare('DELETE FROM image_styles WHERE id = ?').run(id);
+  }
+
+  getDefaultImageStyle() {
+    return this.db.prepare('SELECT * FROM image_styles WHERE is_default = 1').get();
+  }
+
   close() {
     this.db.close();
   }
@@ -174,6 +248,17 @@ export class ProjectDatabase {
     // 添加 video_status 字段 (pending/generating/completed/failed)
     if (!columnNames.includes('video_status')) {
       this.db.exec("ALTER TABLE shots ADD COLUMN video_status TEXT DEFAULT 'pending'");
+    }
+  }
+
+  // 数据库迁移：添加角色形象字段
+  _migrateAddCharacterImage() {
+    const columns = this.db.pragma('table_info(projects)');
+    const columnNames = columns.map(c => c.name);
+
+    // 添加 character_image 字段
+    if (!columnNames.includes('character_image')) {
+      this.db.exec('ALTER TABLE projects ADD COLUMN character_image TEXT');
     }
   }
 }

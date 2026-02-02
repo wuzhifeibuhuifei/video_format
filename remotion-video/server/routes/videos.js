@@ -24,7 +24,7 @@ export function initVideoRoutes(database) {
 // 获取音频时长
 async function getAudioDuration(audioPath) {
   try {
-    const ffprobePath = 'C:/ffmpeg/ffmpeg-8.0.1-essentials_build/bin/ffprobe.exe';
+    const ffprobePath = 'D:/Program Files/ffmpeg-master-latest-win64-gpl/ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe';
     const cmd = `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`;
     const result = execSync(cmd, { encoding: 'utf-8' }).trim();
     const duration = parseFloat(result);

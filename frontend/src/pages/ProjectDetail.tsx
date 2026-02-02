@@ -11,10 +11,13 @@ import {
   regenerateShotImage,
   uploadShotImage,
   fetchProgress,
+  uploadCharacterImage,
+  deleteCharacterImage,
 } from '../api/client';
 import { ShotEditor } from '../components/ui/ShotEditor';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { IconBack, IconPlay, IconImage, IconSpinner } from '../components/ui/Icons';
+import { ProjectAssets } from '../components/ui/ProjectAssets';
+import { IconBack, IconPlay, IconImage, IconSpinner, IconPlus, IconTrash } from '../components/ui/Icons';
 
 export function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -30,6 +33,9 @@ export function ProjectDetail() {
   const [imageRefreshCounter, setImageRefreshCounter] = useState<Record<number, number>>({});
   // 上传状态
   const [uploadingShot, setUploadingShot] = useState<number | null>(null);
+  // 角色形象上传状态
+  const [uploadingCharacter, setUploadingCharacter] = useState(false);
+  const characterInputRef = useRef<HTMLInputElement>(null);
 
   const id = projectId ? parseInt(projectId, 10) : 0;
 
@@ -151,6 +157,36 @@ export function ProjectDetail() {
     }
   };
 
+  // 角色形象上传
+  const handleCharacterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingCharacter(true);
+      const updated = await uploadCharacterImage(id, file);
+      setProject(updated);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '上传角色形象失败');
+    } finally {
+      setUploadingCharacter(false);
+      if (characterInputRef.current) {
+        characterInputRef.current.value = '';
+      }
+    }
+  };
+
+  // 删除角色形象
+  const handleDeleteCharacter = async () => {
+    if (!confirm('确定要删除角色形象吗？')) return;
+    try {
+      const updated = await deleteCharacterImage(id);
+      setProject(updated);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '删除角色形象失败');
+    }
+  };
+
   const handleRender = async () => {
     if (!confirm('确定要开始渲染视频吗？')) return;
     try {
@@ -224,6 +260,75 @@ export function ProjectDetail() {
           <ProgressBar progress={progress} />
         </div>
       )}
+
+      {/* 项目资产统计 */}
+      <div className="mb-6">
+        <ProjectAssets projectId={id} refreshTrigger={imageRefreshCounter[0]} />
+      </div>
+
+      {/* 角色形象 */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">角色形象</h3>
+        <div className="card p-4">
+          <input
+            ref={characterInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleCharacterUpload}
+            className="hidden"
+          />
+          {project.character_image ? (
+            <div className="flex items-start gap-4">
+              <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
+                <img
+                  src={`/${project.character_image}`}
+                  alt="角色形象"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-slate-300 mb-2">
+                  已设置角色形象，生成图片时将使用此形象作为参考
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => characterInputRef.current?.click()}
+                    disabled={uploadingCharacter}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    {uploadingCharacter ? '上传中...' : '更换形象'}
+                  </button>
+                  <button
+                    onClick={handleDeleteCharacter}
+                    className="btn btn-ghost btn-sm text-red-400 hover:text-red-300"
+                  >
+                    <IconTrash className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div
+                onClick={() => characterInputRef.current?.click()}
+                className="w-24 h-24 rounded-lg border-2 border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors"
+              >
+                {uploadingCharacter ? (
+                  <IconSpinner className="w-6 h-6 text-slate-400" />
+                ) : (
+                  <IconPlus className="w-6 h-6 text-slate-400" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-slate-300">添加角色形象（可选）</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  上传角色形象后，生成的所有图片将保持角色一致性
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 镜头列表 */}
       <div className="space-y-3">

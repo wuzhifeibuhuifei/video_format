@@ -1,3 +1,14 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// 必须在 import Remotion 之前设置 ffmpeg 路径
+const ffmpegBinPath = 'D:/Program Files/ffmpeg-master-latest-win64-gpl/ffmpeg-master-latest-win64-gpl/bin';
+process.env.FFMPEG_PATH = path.join(ffmpegBinPath, 'ffmpeg.exe');
+process.env.FFPROBE_PATH = path.join(ffmpegBinPath, 'ffprobe.exe');
+process.env.PATH = `${ffmpegBinPath};${process.env.PATH || ''}`;
+
 import { Router } from 'express';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition, getVideoMetadata } from '@remotion/renderer';
@@ -5,13 +16,9 @@ import { TTSClient } from '../lib/tts.js';
 import { VideoGenerator } from '../lib/video.js';
 import { VideoPromptGenerator } from '../lib/videoPrompt.js';
 import { getConfig } from '../lib/config.js';
-import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { pathToFileURL } from 'url';
 import { execSync, spawn } from 'child_process';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const router = Router();
 
 let db = null;
@@ -62,6 +69,7 @@ router.post('/:projectId/confirm', async (req, res) => {
 
     // 异步处理
     processRender(projectId, taskId).catch(err => {
+      console.error(`[processRender] 渲染失败:`, err);
       renderJobs.set(taskId, { stage: 'error', percent: 0, message: err.message });
     });
 
@@ -73,8 +81,9 @@ router.post('/:projectId/confirm', async (req, res) => {
 });
 
 async function processRender(projectId, taskId) {
-  const config = getConfig();
-  const workflow = config.workflow || {};
+  try {
+    const config = getConfig();
+    const workflow = config.workflow || {};
   const audioRoot = workflow.audio_root || 'assets/audio/generated';
   const videoRoot = workflow.video_root || 'outputs';
   const shotVideoRoot = 'assets/videos/projects';
@@ -227,13 +236,19 @@ async function processRender(projectId, taskId) {
   // 4. 更新数据库
   db.updateProject(projectId, { status: 'rendered', video_path: outputPath });
   renderJobs.delete(taskId);
+  console.log(`[processRender] ========== 渲染流程完成 ==========`);
+  } catch (err) {
+    console.error(`[processRender] 渲染流程出错:`, err);
+    renderJobs.set(taskId, { stage: 'error', percent: 0, message: err.message });
+    throw err;
+  }
 }
 
 // 获取音频时长
 async function getAudioDuration(audioPath) {
   try {
     // 使用 ffprobe 获取真实音频时长
-    const ffprobePath = 'C:/ffmpeg/ffmpeg-8.0.1-essentials_build/bin/ffprobe.exe';
+    const ffprobePath = 'D:/Program Files/ffmpeg-master-latest-win64-gpl/ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe';
     const cmd = `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`;
     const result = execSync(cmd, { encoding: 'utf-8' }).trim();
     const duration = parseFloat(result);
@@ -399,6 +414,21 @@ function getResolution(aspectRatio) {
 
 // 渲染视频
 async function renderVideo(props, outputPath, taskId) {
+  console.log(`[renderVideo] 开始渲染流程`);
+  console.log(`[renderVideo] FFMPEG_PATH=${process.env.FFMPEG_PATH}`);
+  console.log(`[renderVideo] FFPROBE_PATH=${process.env.FFPROBE_PATH}`);
+
+  // 验证 ffmpeg 可用性
+  try {
+    const { execSync } = await import('child_process');
+    const testCmd = `"${process.env.FFMPEG_PATH}" -version`;
+    execSync(testCmd, { stdio: 'pipe' });
+    console.log(`[renderVideo] ffmpeg 验证成功`);
+  } catch (err) {
+    console.error(`[renderVideo] ffmpeg 不可用: ${err.message}`);
+    throw new Error(`ffmpeg not found at ${process.env.FFMPEG_PATH}`);
+  }
+
   // 确保输出目录存在
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) {
@@ -407,27 +437,38 @@ async function renderVideo(props, outputPath, taskId) {
 
   // 打包
   renderJobs.set(taskId, { stage: 'render', percent: 50, message: '打包中...' });
+  console.log(`[renderVideo] 开始打包...`);
   const bundled = await bundle({
     entryPoint: path.join(__dirname, '../../src/index.ts'),
     webpackOverride: (config) => config,
   });
+  console.log(`[renderVideo] 打包完成`);
 
   // 选择 composition
   renderJobs.set(taskId, { stage: 'render', percent: 55, message: '准备渲染...' });
+  console.log(`[renderVideo] 选择 composition...`);
+  const browserExecutable = 'D:/Program Files/chrome-headless-shell/chrome-headless-shell-win64/chrome-headless-shell.exe';
   const composition = await selectComposition({
     serveUrl: bundled,
     id: 'VideoComposition',
     inputProps: props,
+    browserExecutable,
+    timeoutInMilliseconds: 120000, // 增加到 2 分钟
   });
+  console.log(`[renderVideo] composition: ${composition.id}, duration: ${composition.durationInFrames}帧`);
 
   // 渲染
+  console.log(`[renderVideo] 开始渲染视频到: ${outputPath}`);
   await renderMedia({
     composition,
     serveUrl: bundled,
     codec: 'h264',
     outputLocation: outputPath,
     inputProps: props,
+    browserExecutable,
+    timeoutInMilliseconds: 300000, // 5 分钟超时
     onProgress: ({ progress }) => {
+      console.log(`[renderVideo] 渲染进度: ${(progress * 100).toFixed(1)}%`);
       renderJobs.set(taskId, {
         stage: 'render',
         percent: 55 + Math.round(progress * 45),
@@ -435,6 +476,7 @@ async function renderVideo(props, outputPath, taskId) {
       });
     },
   });
+  console.log(`[renderVideo] 渲染完成!`);
 }
 
 export default router;

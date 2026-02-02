@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreateProjectRequest, fetchConfig } from '../../api/client';
+import { CreateProjectRequest, fetchConfig, fetchImageStyles, ImageStyle } from '../../api/client';
 import { IconSpinner } from './Icons';
 
 interface CreateProjectFormProps {
@@ -18,9 +18,12 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
     audio_effects: { enable_bgm: true },
   });
   const [useCustomText, setUseCustomText] = useState(false);
+  const [imageStyles, setImageStyles] = useState<ImageStyle[]>([]);
+  const [selectedStyleId, setSelectedStyleId] = useState<number | 'custom'>('custom');
 
-  // 加载默认配置
+  // 加载默认配置和画面风格
   useEffect(() => {
+    // 加载配置
     fetchConfig().then((config) => {
       setFormData((prev) => ({
         ...prev,
@@ -30,15 +33,47 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
         audio_effects: { enable_bgm: config.enable_bgm !== false },
       }));
     }).catch(() => {
-      // 使用硬编码的默认值
       const fallbackStyle = '简笔画风格，白色线条手绘，纯色克莱因蓝背景(#002FA7)，极简主义，干净利落的线条，儿童绘本插画感';
       setFormData((prev) => ({ ...prev, image_style: fallbackStyle }));
+    });
+
+    // 加载画面风格列表
+    fetchImageStyles().then((styles) => {
+      setImageStyles(styles);
+      // 如果有默认风格，自动选中
+      const defaultStyle = styles.find(s => s.is_default === 1);
+      if (defaultStyle) {
+        setSelectedStyleId(defaultStyle.id);
+        setFormData((prev) => ({
+          ...prev,
+          image_style: defaultStyle.prompt,
+          negative_prompt: defaultStyle.negative_prompt,
+        }));
+      }
+    }).catch(() => {
+      // 忽略错误，使用自定义模式
     });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit(formData);
+  };
+
+  const handleStyleSelect = (styleId: number | 'custom') => {
+    setSelectedStyleId(styleId);
+    if (styleId === 'custom') {
+      // 切换到自定义模式，清空或保留当前值
+      return;
+    }
+    const style = imageStyles.find(s => s.id === styleId);
+    if (style) {
+      setFormData(prev => ({
+        ...prev,
+        image_style: style.prompt,
+        negative_prompt: style.negative_prompt,
+      }));
+    }
   };
 
   return (
@@ -113,14 +148,31 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
       {/* 全局画面风格 */}
       <div>
         <label className="input-label">全局画面风格</label>
+        {imageStyles.length > 0 && (
+          <select
+            className="input mb-2"
+            value={selectedStyleId}
+            onChange={(e) => handleStyleSelect(e.target.value === 'custom' ? 'custom' : parseInt(e.target.value))}
+          >
+            <option value="custom">自定义风格</option>
+            {imageStyles.map((style) => (
+              <option key={style.id} value={style.id}>
+                {style.name}{style.is_default === 1 ? ' (默认)' : ''}
+              </option>
+            ))}
+          </select>
+        )}
         <textarea
           className="input min-h-[80px] resize-y"
           placeholder="描述画面风格，例如：简笔画风格，白色线条手绘，纯色克莱因蓝背景..."
           value={formData.image_style || ''}
-          onChange={(e) => setFormData({ ...formData, image_style: e.target.value })}
+          onChange={(e) => {
+            setFormData({ ...formData, image_style: e.target.value });
+            setSelectedStyleId('custom');
+          }}
         />
         <p className="text-xs text-slate-500 mt-1">
-          此风格将应用于所有镜头的画面生成
+          {selectedStyleId === 'custom' ? '自定义风格将应用于所有镜头' : '选择预设风格或自定义编辑'}
         </p>
       </div>
 

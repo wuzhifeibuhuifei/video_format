@@ -138,6 +138,14 @@ audio_root = "assets/audio/generated"
 # 自动保存的视频输出目录
 video_root = "outputs"
 
+[auth]
+# 是否启用 HTTP Basic Auth 认证
+enable = true
+# 用户名
+username = "admin"
+# 密码（建议部署时修改为强密码）
+password = "video2024"
+
 [database]
 path = "data/projects.db"
 

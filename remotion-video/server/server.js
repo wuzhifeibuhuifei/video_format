@@ -13,6 +13,8 @@ import { initImageRoutes } from './routes/images.js';
 import { initRenderRoutes } from './routes/render.js';
 import { initVideoRoutes } from './routes/videos.js';
 import { initVoiceRoutes } from './routes/voice.js';
+import { initImageStyleRoutes } from './routes/imageStyles.js';
+import { initSettingsRoutes } from './routes/settings.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,6 +22,39 @@ const app = express();
 // 加载配置
 const configPath = path.join(__dirname, '../../config.toml');
 const config = loadConfig(configPath);
+
+// Basic Auth 中间件
+const basicAuth = (req, res, next) => {
+  const authConfig = config.auth || {};
+
+  // 如果未启用认证，直接放行
+  if (!authConfig.enable) {
+    return next();
+  }
+
+  // 健康检查端点不需要认证
+  if (req.path === '/health') {
+    return next();
+  }
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Video Format Demo"');
+    return res.status(401).json({ error: '需要认证' });
+  }
+
+  const base64Credentials = authHeader.split(' ')[1];
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('utf8');
+  const [username, password] = credentials.split(':');
+
+  if (username === authConfig.username && password === authConfig.password) {
+    return next();
+  }
+
+  res.setHeader('WWW-Authenticate', 'Basic realm="Video Format Demo"');
+  return res.status(401).json({ error: '用户名或密码错误' });
+};
 
 // 初始化数据库
 const dbPath = config.database?.path || 'data/projects.db';
@@ -33,10 +68,14 @@ app.use(fileUpload({
   abortOnLimit: true,
 }));
 
+// 应用 Basic Auth 认证
+app.use(basicAuth);
+
 // 静态文件服务
 // 修复：先尝试 server/assets，再尝试项目根目录的 assets
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/assets', express.static(path.join(__dirname, '../../assets')));
+app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
 app.use('/outputs', express.static(path.join(__dirname, '../../outputs')));
 
 // API 路由
@@ -46,6 +85,8 @@ app.use('/api/projects', initImageRoutes(db));
 app.use('/api/projects', initRenderRoutes(db));
 app.use('/api/projects', initVideoRoutes(db));
 app.use('/api/voice', initVoiceRoutes());
+app.use('/api/image-styles', initImageStyleRoutes(db));
+app.use('/api/settings', initSettingsRoutes());
 
 // 配置 API
 app.get('/api/config', (req, res) => {

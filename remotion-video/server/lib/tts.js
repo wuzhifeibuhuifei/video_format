@@ -4,16 +4,21 @@ import path from 'path';
 
 export class TTSClient {
   constructor() {
+    this.refreshConfig();
+  }
+
+  refreshConfig() {
     const config = getConfig();
     this.ttsConfig = config.minimax_speech || {};
     this.apiUrl = this.ttsConfig.api_url;
-    this.apiKey = this.ttsConfig.api_key;
+    this.apiKey = this.ttsConfig.api_key || '';
     this.model = this.ttsConfig.model || 'speech-2.6-hd';
     this.voiceSetting = this.ttsConfig.voice_setting || {};
     this.audioSetting = this.ttsConfig.audio_setting || {};
   }
 
   async synthesize(text, outputPath, options = {}) {
+    this.refreshConfig();
     const voiceId = options.voice_id || this.voiceSetting.voice_id;
     const speed = options.speed || this.voiceSetting.speed || 1.0;
 

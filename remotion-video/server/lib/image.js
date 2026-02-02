@@ -4,14 +4,19 @@ import path from 'path';
 
 export class ImageGenerator {
   constructor() {
+    this.refreshConfig();
+  }
+
+  refreshConfig() {
     const config = getConfig();
     this.volcConfig = config.volcengine_image || {};
     this.enabled = this.volcConfig.enable || false;
-    this.apiKey = this.volcConfig.api_key;
+    this.apiKey = this.volcConfig.api_key || config.volcengine?.api_key || '';
     this.modelEndpoint = this.volcConfig.model_endpoint;
   }
 
   async generate(prompt, outputPath, options = {}) {
+    this.refreshConfig();
     if (!this.enabled) {
       throw new Error('Image generation not enabled');
     }

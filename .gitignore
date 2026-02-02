@@ -23,3 +23,9 @@ node_modules/
 frontend/node_modules/
 remotion-video/node_modules/
 remotion-video/server/node_modules/
+config.override.json
+_tmp_patch.diff
+test.tmp
+remotion-video/server/_tmp_patch.diff
+remotion-video/server/test.tmp
+

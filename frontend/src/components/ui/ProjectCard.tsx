@@ -17,6 +17,11 @@ export function ProjectCard({ project, onClick, onDelete }: ProjectCardProps) {
 
   const status = statusMap[project.status] || statusMap.draft;
 
+  // 显示标题：自定义文案项目显示预览文本，否则显示主题
+  const displayTitle = project.theme === '自定义文案' && project.preview_text
+    ? project.preview_text.slice(0, 30) + (project.preview_text.length > 30 ? '...' : '')
+    : project.theme;
+
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onDelete && confirm(`确定要删除项目「${project.theme}」吗？`)) {
@@ -32,7 +37,7 @@ export function ProjectCard({ project, onClick, onDelete }: ProjectCardProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-medium text-white truncate">{project.theme}</h3>
+            <h3 className="font-medium text-white truncate">{displayTitle}</h3>
             <span className={`status-badge ${status.class}`}>{status.label}</span>
           </div>
           <p className="text-sm text-slate-400 truncate">

@@ -31,6 +31,15 @@ router.post('/:projectId/images', async (req, res) => {
     const shots = project.shots || [];
     let firstImagePath = null; // 第一张图片路径，用作后续图片的参考
 
+    // 优先使用角色形象作为参考图片
+    let characterImagePath = null;
+    if (project.character_image) {
+      characterImagePath = path.join(__dirname, '../', project.character_image);
+      if (!fs.existsSync(characterImagePath)) {
+        characterImagePath = null;
+      }
+    }
+
     for (let i = 0; i < shots.length; i++) {
       const shot = shots[i];
       if (shot.image_prompt && shot.image_path) {
@@ -49,10 +58,16 @@ router.post('/:projectId/images', async (req, res) => {
 
         console.log(`Generating image for shot ${shot.display_index}: ${shot.image_path}`);
 
-        // 第一张图片不使用参考，后续图片使用第一张作为参考
+        // 确定参考图片：优先使用角色形象，其次使用第一张图片
         const options = {};
-        if (useReference && i > 0 && firstImagePath && fs.existsSync(firstImagePath)) {
-          options.referenceImage = firstImagePath;
+        if (useReference) {
+          if (characterImagePath) {
+            // 有角色形象时，所有图片都使用角色形象作为参考
+            options.referenceImage = characterImagePath;
+          } else if (i > 0 && firstImagePath && fs.existsSync(firstImagePath)) {
+            // 没有角色形象时，后续图片使用第一张作为参考
+            options.referenceImage = firstImagePath;
+          }
         }
 
         await imageGen.generate(shot.image_prompt, absolutePath, options);
@@ -137,14 +152,24 @@ router.post('/:projectId/shots/:shotId/image', async (req, res) => {
       const absolutePath = path.join(__dirname, '../', shot.image_path);
       const options = {};
 
-      // 如果不是第一张图片，使用第一张图片作为参考
-      const shotIndex = shots.findIndex(s => s.id === shotId);
-      if (useReference && shotIndex > 0) {
-        const firstShot = shots[0];
-        if (firstShot.image_path) {
-          const firstShotAbsolutePath = path.join(__dirname, '../', firstShot.image_path);
-          if (fs.existsSync(firstShotAbsolutePath)) {
-            options.referenceImage = firstShotAbsolutePath;
+      if (useReference) {
+        // 优先使用角色形象作为参考图片
+        if (project.character_image) {
+          const characterImagePath = path.join(__dirname, '../', project.character_image);
+          if (fs.existsSync(characterImagePath)) {
+            options.referenceImage = characterImagePath;
+          }
+        } else {
+          // 没有角色形象时，使用第一张图片作为参考
+          const shotIndex = shots.findIndex(s => s.id === shotId);
+          if (shotIndex > 0) {
+            const firstShot = shots[0];
+            if (firstShot.image_path) {
+              const firstShotAbsolutePath = path.join(__dirname, '../', firstShot.image_path);
+              if (fs.existsSync(firstShotAbsolutePath)) {
+                options.referenceImage = firstShotAbsolutePath;
+              }
+            }
           }
         }
       }

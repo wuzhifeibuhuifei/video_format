@@ -4,10 +4,14 @@ import path from 'path';
 
 export class VideoGenerator {
   constructor() {
+    this.refreshConfig();
+  }
+
+  refreshConfig() {
     const config = getConfig();
     this.volcConfig = config.volcengine_video || {};
     this.enabled = this.volcConfig.enable || false;
-    this.apiKey = this.volcConfig.api_key || config.volcengine?.api_key;
+    this.apiKey = this.volcConfig.api_key || config.volcengine?.api_key || '';
     this.modelEndpoint = this.volcConfig.model_endpoint || 'doubao-seedance-1-5-pro-250828';
     this.pollInterval = this.volcConfig.poll_interval || 5000;
     this.maxPollTime = this.volcConfig.max_poll_time || 300000;
@@ -25,6 +29,7 @@ export class VideoGenerator {
    * @returns {Promise<{videoPath: string, lastFrameUrl?: string}>}
    */
   async generate(firstFrameImagePath, prompt, outputPath, options = {}) {
+    this.refreshConfig();
     if (!this.enabled) {
       throw new Error('Video generation not enabled');
     }
