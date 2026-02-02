@@ -1,7 +1,16 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { IconVideo } from './components/ui/Icons';
+import { clearAuth } from './api/client';
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Dynamic Background */}
@@ -28,6 +37,38 @@ function App() {
               </h1>
               <p className="text-xs text-indigo-300/60 font-medium tracking-wide">AI 驱动的短视频创作工具</p>
             </div>
+            <nav className="ml-auto flex items-center gap-4">
+              <Link
+                to="/"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/' ? 'text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                项目列表
+              </Link>
+              <Link
+                to="/image-styles"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/image-styles' ? 'text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                画面风格
+              </Link>
+              <Link
+                to="/settings"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/settings' ? 'text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                配置管理
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-sm font-medium text-slate-400 hover:text-red-400 transition-colors"
+              >
+                退出
+              </button>
+            </nav>
           </div>
         </div>
       </header>
