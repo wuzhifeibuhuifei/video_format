@@ -5,12 +5,14 @@ import type { VideoCompositionProps } from './types';
 
 // 加载本地中文字体
 const fontFamily = 'Noto Sans SC';
+const fontUrl = staticFile('fonts/NotoSansSC-VariableFont_wght.ttf');
+
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.textContent = `
     @font-face {
       font-family: '${fontFamily}';
-      src: url('http://127.0.0.1:3001/assets/fonts/NotoSansSC-VariableFont_wght.ttf') format('truetype');
+      src: url('${fontUrl}') format('truetype');
       font-weight: 100 900;
       font-display: swap;
     }

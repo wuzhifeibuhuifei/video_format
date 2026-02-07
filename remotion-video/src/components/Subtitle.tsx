@@ -1,10 +1,9 @@
 import React from 'react';
 import { AbsoluteFill, useVideoConfig } from 'remotion';
-import { loadFont } from '@remotion/google-fonts/NotoSansSC';
 import type { SubtitlePosition } from '../types';
 
-// 加载中文字体
-const { fontFamily } = loadFont();
+// 使用本地字体（在 Root.tsx 中通过 @font-face 加载）
+const fontFamily = 'Noto Sans SC';
 
 type Props = {
   text: string;

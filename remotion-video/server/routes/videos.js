@@ -6,6 +6,11 @@ import { getConfig } from '../lib/config.js';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const bundledFfmpegDir = path.resolve(__dirname, '../assets/ffmpeg');
+const bundledFfprobePath = path.join(bundledFfmpegDir, 'ffprobe.exe');
 
 const router = Router();
 let db = null;
@@ -24,13 +29,16 @@ export function initVideoRoutes(database) {
 // 获取音频时长
 async function getAudioDuration(audioPath) {
   try {
-    const ffprobePath = 'D:/Program Files/ffmpeg-master-latest-win64-gpl/ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe';
-    const cmd = `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`;
-    const result = execSync(cmd, { encoding: 'utf-8' }).trim();
-    const duration = parseFloat(result);
-    if (!isNaN(duration) && duration > 0) {
-      console.log(`  音频时长 (ffprobe): ${duration.toFixed(2)}秒`);
-      return duration;
+    if (fs.existsSync(bundledFfprobePath)) {
+      const cmd = `"${bundledFfprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`;
+      const result = execSync(cmd, { encoding: 'utf-8' }).trim();
+      const duration = parseFloat(result);
+      if (!isNaN(duration) && duration > 0) {
+        console.log(`  音频时长 (ffprobe): ${duration.toFixed(2)}秒`);
+        return duration;
+      }
+    } else {
+      console.warn(`ffprobe 不存在: ${bundledFfprobePath}`);
     }
   } catch (err) {
     console.warn(`ffprobe 获取音频时长失败: ${err.message}`);

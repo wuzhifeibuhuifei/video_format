@@ -3,11 +3,25 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// 必须在 import Remotion 之前设置 ffmpeg 路径
-const ffmpegBinPath = 'D:/Program Files/ffmpeg-master-latest-win64-gpl/ffmpeg-master-latest-win64-gpl/bin';
-process.env.FFMPEG_PATH = path.join(ffmpegBinPath, 'ffmpeg.exe');
-process.env.FFPROBE_PATH = path.join(ffmpegBinPath, 'ffprobe.exe');
-process.env.PATH = `${ffmpegBinPath};${process.env.PATH || ''}`;
+// 使用项目内置的 ffmpeg，根据平台选择 Chrome
+const bundledFfmpegDir = path.resolve(__dirname, '../assets/ffmpeg');
+const isLinux = process.platform === 'linux';
+
+// Linux 使用系统 Chromium，Windows 使用打包的 ffmpeg
+const bundledFfmpegPath = isLinux ? '/usr/bin/ffmpeg' : path.join(bundledFfmpegDir, 'ffmpeg.exe');
+const bundledFfprobePath = isLinux ? '/usr/bin/ffprobe' : path.join(bundledFfmpegDir, 'ffprobe.exe');
+
+// 根据平台选择内置的 chrome-headless-shell
+// Windows: chrome-headless-shell-win64/chrome-headless-shell.exe
+// Linux: chrome-headless-shell-linux64/chrome-headless-shell (可通过环境变量覆盖)
+const bundledChromeDir = path.resolve(__dirname, '../assets/chrome-headless');
+const bundledChromeExecutable = process.env.CHROME_EXECUTABLE_PATH || (isLinux
+  ? path.join(bundledChromeDir, 'chrome-headless-shell-linux64', 'chrome-headless-shell')
+  : path.join(bundledChromeDir, 'chrome-headless-shell-win64', 'chrome-headless-shell.exe'));
+
+process.env.FFMPEG_PATH = bundledFfmpegPath;
+process.env.FFPROBE_PATH = bundledFfprobePath;
+process.env.PATH = isLinux ? `${bundledFfmpegDir}:${process.env.PATH || ''}` : `${bundledFfmpegDir};${process.env.PATH || ''}`;
 
 import { Router } from 'express';
 import { bundle } from '@remotion/bundler';
@@ -26,6 +40,25 @@ let tts = null;
 let videoGen = null;
 let promptGen = null;
 const renderJobs = new Map();
+
+function resolveServerUrlWithAuth(cfg) {
+  const config = cfg || getConfig();
+  const authConfig = config.auth || {};
+  const baseUrl = (config.remotion?.server_url || 'http://127.0.0.1:3001').replace(/\/+$/, '');
+
+  if (authConfig.enable && authConfig.username && authConfig.password) {
+    try {
+      const url = new URL(baseUrl);
+      url.username = authConfig.username;
+      url.password = authConfig.password;
+      return url.toString().replace(/\/+$/, '');
+    } catch (err) {
+      console.warn(`[resolveServerUrlWithAuth] Invalid server_url "${baseUrl}": ${err.message}`);
+    }
+  }
+
+  return baseUrl;
+}
 
 export function initRenderRoutes(database) {
   db = database;
@@ -248,13 +281,16 @@ async function processRender(projectId, taskId) {
 async function getAudioDuration(audioPath) {
   try {
     // 使用 ffprobe 获取真实音频时长
-    const ffprobePath = 'D:/Program Files/ffmpeg-master-latest-win64-gpl/ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe';
-    const cmd = `"${ffprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`;
-    const result = execSync(cmd, { encoding: 'utf-8' }).trim();
-    const duration = parseFloat(result);
-    console.log(`  音频时长 (ffprobe): ${duration.toFixed(2)}秒`);
-    if (!isNaN(duration) && duration > 0) {
-      return duration;
+    if (fs.existsSync(bundledFfprobePath)) {
+      const cmd = `"${bundledFfprobePath}" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPath}"`;
+      const result = execSync(cmd, { encoding: 'utf-8' }).trim();
+      const duration = parseFloat(result);
+      console.log(`  音频时长 (ffprobe): ${duration.toFixed(2)}秒`);
+      if (!isNaN(duration) && duration > 0) {
+        return duration;
+      }
+    } else {
+      console.warn(`ffprobe 不存在: ${bundledFfprobePath}`);
     }
   } catch (err) {
     console.warn(`ffprobe 获取音频时长失败: ${err.message}`);
@@ -270,7 +306,7 @@ async function getAudioDuration(audioPath) {
 async function buildRemotionShots(shots, audioPaths, videoPaths, fps, useVideo) {
   const result = [];
   const config = getConfig();
-  const serverUrl = config.remotion?.server_url || 'http://127.0.0.1:3001';
+  const serverUrl = resolveServerUrlWithAuth(config);
 
   for (let i = 0; i < shots.length; i++) {
     const shot = shots[i];
@@ -318,7 +354,7 @@ function buildRemotionProps(shots, fps, project, videoEffects, audioEffects) {
   const aspectRatio = project.aspect_ratio || '16:9';
   const [width, height] = getResolution(aspectRatio);
   const config = getConfig();
-  const serverUrl = config.remotion?.server_url || 'http://127.0.0.1:3001';
+  const serverUrl = resolveServerUrlWithAuth(config);
 
   // Resolve project-level config regardless of whether we receive the parsed object or JSON string
   const projectConfig = (() => {
@@ -438,8 +474,17 @@ async function renderVideo(props, outputPath, taskId) {
   // 打包
   renderJobs.set(taskId, { stage: 'render', percent: 50, message: '打包中...' });
   console.log(`[renderVideo] 开始打包...`);
+
+  // 确定 Remotion 入口文件路径
+  // Docker 环境使用 REMOTION_PROJECT_DIR 环境变量，本地开发使用相对路径
+  const remotionProjectDir = process.env.REMOTION_PROJECT_DIR;
+  const entryPoint = remotionProjectDir
+    ? path.join(remotionProjectDir, 'src/index.ts')
+    : path.join(__dirname, '../../src/index.ts');
+  console.log(`[renderVideo] Remotion entryPoint: ${entryPoint}`);
+
   const bundled = await bundle({
-    entryPoint: path.join(__dirname, '../../src/index.ts'),
+    entryPoint,
     webpackOverride: (config) => config,
   });
   console.log(`[renderVideo] 打包完成`);
@@ -447,7 +492,7 @@ async function renderVideo(props, outputPath, taskId) {
   // 选择 composition
   renderJobs.set(taskId, { stage: 'render', percent: 55, message: '准备渲染...' });
   console.log(`[renderVideo] 选择 composition...`);
-  const browserExecutable = 'D:/Program Files/chrome-headless-shell/chrome-headless-shell-win64/chrome-headless-shell.exe';
+  const browserExecutable = bundledChromeExecutable;
   const composition = await selectComposition({
     serveUrl: bundled,
     id: 'VideoComposition',
