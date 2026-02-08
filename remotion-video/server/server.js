@@ -68,15 +68,37 @@ app.use(fileUpload({
   abortOnLimit: true,
 }));
 
-// 应用 Basic Auth 认证
-app.use(basicAuth);
+// 静态文件服务 - 需要在 Auth 之前，因为播放器无法传递认证信息
+// 媒体文件需要特殊处理：添加 CORS 头并跳过认证
+const mediaCorsOptions = {
+  origin: '*',
+  methods: 'GET',
+  allowedHeaders: 'Content-Type',
+  exposedHeaders: 'Content-Length, Content-Type',
+};
 
-// 静态文件服务
-// 修复：先尝试 server/assets，再尝试项目根目录的 assets
+app.use('/assets', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Access-Control-Allow-Headers', 'Range');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+  next();
+});
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/assets', express.static(path.join(__dirname, '../../assets')));
+
+app.use('/outputs', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Access-Control-Allow-Headers', 'Range');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+  next();
+});
 app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
 app.use('/outputs', express.static(path.join(__dirname, '../../outputs')));
+
+// 应用 Basic Auth 认证（API 路由需要，静态文件不需要）
+app.use(basicAuth);
 
 // API 路由
 app.use('/api/projects', initProjectRoutes(db));

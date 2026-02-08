@@ -6,6 +6,7 @@ import {
   TaskProgress,
   fetchProject,
   updateShots,
+  updateProjectConfig,
   confirmProject,
   generateImages,
   regenerateShotImage,
@@ -25,6 +26,7 @@ export function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [rendering, setRendering] = useState(false);
+  const [renderComplete, setRenderComplete] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
   const [regeneratingShot, setRegeneratingShot] = useState<number | null>(null);
   const [progress, setProgress] = useState<TaskProgress | null>(null);
@@ -36,6 +38,14 @@ export function ProjectDetail() {
   // 角色形象上传状态
   const [uploadingCharacter, setUploadingCharacter] = useState(false);
   const characterInputRef = useRef<HTMLInputElement>(null);
+  // 配置编辑状态
+  const [editingConfig, setEditingConfig] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [configForm, setConfigForm] = useState({
+    aspect_ratio: '9:16',
+    enable_subtitle: true,
+    enable_bgm: true,
+  });
 
   const id = projectId ? parseInt(projectId, 10) : 0;
 
@@ -52,18 +62,24 @@ export function ProjectDetail() {
     };
   }, []);
 
-  const startPolling = () => {
+  const startPolling = (onComplete?: () => void) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
+    let wasRunning = false;
     pollingRef.current = window.setInterval(async () => {
       try {
         const res = await fetchProgress(id);
         if (res.status === 'running' && res.progress) {
+          wasRunning = true;
           setProgress(res.progress);
         } else {
           setProgress(null);
           if (pollingRef.current) {
             clearInterval(pollingRef.current);
             pollingRef.current = null;
+          }
+          // 如果之前在运行，现在停止了，说明渲染完成
+          if (wasRunning && onComplete) {
+            onComplete();
           }
         }
       } catch {
@@ -85,6 +101,12 @@ export function ProjectDetail() {
       setLoading(true);
       const data = await fetchProject(id);
       setProject(data);
+      // 初始化配置表单
+      setConfigForm({
+        aspect_ratio: data.aspect_ratio || '9:16',
+        enable_subtitle: data.config?.enable_subtitle !== false,
+        enable_bgm: data.config?.audio_effects?.enable_bgm !== false,
+      });
     } catch (err) {
       alert(err instanceof Error ? err.message : '加载失败');
     } finally {
@@ -187,19 +209,40 @@ export function ProjectDetail() {
     }
   };
 
+  // 保存配置
+  const handleSaveConfig = async () => {
+    try {
+      setSavingConfig(true);
+      const updated = await updateProjectConfig(id, {
+        aspect_ratio: configForm.aspect_ratio,
+        enable_subtitle: configForm.enable_subtitle,
+        audio_effects: { enable_bgm: configForm.enable_bgm },
+      });
+      setProject(updated);
+      setEditingConfig(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '保存配置失败');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
   const handleRender = async () => {
     if (!confirm('确定要开始渲染视频吗？')) return;
     try {
       setRendering(true);
-      startPolling();
-      const updated = await confirmProject(id);
-      setProject(updated);
-      alert('渲染完成！');
+      setRenderComplete(false);
+      startPolling(() => {
+        // 渲染完成回调
+        setRenderComplete(true);
+        setRendering(false);
+        loadProject(); // 刷新项目数据
+      });
+      await confirmProject(id);
     } catch (err) {
-      alert(err instanceof Error ? err.message : '渲染失败');
-    } finally {
       stopPolling();
       setRendering(false);
+      alert(err instanceof Error ? err.message : '渲染失败');
     }
   };
 
@@ -232,7 +275,105 @@ export function ProjectDetail() {
             {project.style} · {project.aspect_ratio} · {project.scene_count} 镜头
           </p>
         </div>
+        <button
+          onClick={() => setEditingConfig(!editingConfig)}
+          className="btn btn-ghost btn-sm text-slate-400 hover:text-white"
+        >
+          {editingConfig ? '取消' : '设置'}
+        </button>
       </div>
+
+      {/* 配置编辑面板 */}
+      {editingConfig && (
+        <div className="mb-6 p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+          <h3 className="text-sm font-medium text-slate-300 mb-4">视频配置</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 视频比例 */}
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">视频比例</label>
+              <select
+                value={configForm.aspect_ratio}
+                onChange={(e) => setConfigForm({ ...configForm, aspect_ratio: e.target.value })}
+                className="input py-2"
+              >
+                <option value="9:16">9:16 (竖屏)</option>
+                <option value="16:9">16:9 (横屏)</option>
+                <option value="1:1">1:1 (方形)</option>
+                <option value="4:3">4:3 (标准)</option>
+              </select>
+            </div>
+
+            {/* 字幕开关 */}
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">字幕显示</label>
+              <div className="flex items-center gap-3 h-[42px]">
+                <button
+                  type="button"
+                  onClick={() => setConfigForm({ ...configForm, enable_subtitle: true })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    configForm.enable_subtitle
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-700 text-slate-400'
+                  }`}
+                >
+                  显示
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfigForm({ ...configForm, enable_subtitle: false })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    !configForm.enable_subtitle
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-700 text-slate-400'
+                  }`}
+                >
+                  隐藏
+                </button>
+              </div>
+            </div>
+
+            {/* 背景音乐开关 */}
+            <div>
+              <label className="block text-xs text-slate-400 mb-2">背景音乐</label>
+              <div className="flex items-center gap-3 h-[42px]">
+                <button
+                  type="button"
+                  onClick={() => setConfigForm({ ...configForm, enable_bgm: true })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    configForm.enable_bgm
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-700 text-slate-400'
+                  }`}
+                >
+                  开启
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfigForm({ ...configForm, enable_bgm: false })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    !configForm.enable_bgm
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-700 text-slate-400'
+                  }`}
+                >
+                  关闭
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 保存按钮 */}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={handleSaveConfig}
+              disabled={savingConfig}
+              className="btn btn-primary btn-sm"
+            >
+              {savingConfig ? '保存中...' : '保存配置'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 操作按钮 */}
       <div className="flex gap-3 mb-6">
@@ -254,10 +395,22 @@ export function ProjectDetail() {
         </button>
       </div>
 
-      {/* 进度条 */}
-      {progress && (
+      {/* 进度条 - 只在真正渲染时显示（跳过打包和准备阶段） */}
+      {progress && progress.stage === 'render' && progress.percent > 5 && (
         <div className="mb-6">
           <ProgressBar progress={progress} />
+        </div>
+      )}
+
+      {/* 渲染完成提示 */}
+      {renderComplete && !rendering && (
+        <div className="mb-6 p-4 bg-green-900/30 border border-green-500/50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-green-400 font-medium">渲染完成</span>
+          </div>
         </div>
       )}
 

@@ -191,6 +191,72 @@ router.delete('/:id/character-image', (req, res) => {
   }
 });
 
+// 更新项目配置
+router.patch('/:id/config', (req, res) => {
+  const projectId = parseInt(req.params.id);
+
+  try {
+    const project = db.getProject(projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const { aspect_ratio, enable_subtitle, enable_bgm, audio_effects, video_effects, timing } = req.body;
+
+    // 合并现有配置
+    const existingConfig = (typeof project.config_json === 'string'
+      ? JSON.parse(project.config_json || '{}')
+      : (project.config || {}));
+
+    const updates = {};
+
+    // 更新直接字段
+    if (aspect_ratio) {
+      updates.aspect_ratio = aspect_ratio;
+    }
+
+    // 更新 config 中的字段
+    const newConfig = {
+      ...existingConfig,
+    };
+
+    if (enable_subtitle !== undefined) {
+      newConfig.enable_subtitle = enable_subtitle;
+    }
+
+    if (audio_effects) {
+      newConfig.audio_effects = {
+        ...(existingConfig.audio_effects || {}),
+        ...audio_effects,
+      };
+    }
+
+    if (video_effects) {
+      newConfig.video_effects = {
+        ...(existingConfig.video_effects || {}),
+        ...video_effects,
+      };
+    }
+
+    if (timing) {
+      newConfig.timing = {
+        ...(existingConfig.timing || {}),
+        ...timing,
+      };
+    }
+
+    updates.config = newConfig;
+
+    db.updateProject(projectId, updates);
+
+    console.log(`Project ${projectId} config updated`);
+    res.json(db.getProject(projectId));
+  } catch (err) {
+    console.error('Update project config error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 获取项目资产统计
 router.get('/:id/assets', (req, res) => {
   const projectId = parseInt(req.params.id);
@@ -293,6 +359,69 @@ router.get('/:id/assets', (req, res) => {
     res.json({ assets, summary });
   } catch (err) {
     console.error('Get project assets error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 生成随机视频主题
+router.post('/generate-theme', async (req, res) => {
+  try {
+    const config = getConfig();
+    const apiUrl = config.volcengine?.api_url;
+    const apiKey = config.volcengine?.api_key;
+    const model = config.volcengine?.model || 'deepseek-v3-2-251201';
+
+    if (!apiUrl || !apiKey) {
+      return res.status(500).json({ error: 'LLM API not configured' });
+    }
+
+    const prompt = `你是一个专业的短视频内容策划师。请生成一个能引发共鸣、深入人心的抖音短视频主题。
+
+要求：
+1. 必须是能触动情感的话题（亲情、爱情、友情、成长、孤独、梦想、遗憾等）
+2. 用2-4个字概括主题名称
+3. 附上一句10-20字的简短描述，能引起目标群体的共鸣
+4. 不要重复以下主题：${(req.body.excludedThemes || []).join('、')}
+
+请输出JSON格式：
+{
+  "title": "主题名称",
+  "description": "简短描述",
+  "tags": ["标签1", "标签2"]
+}
+
+只输出JSON，不要其他内容。`;
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 1.0, // 高温度产生更多创意
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`LLM API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+
+    // 提取JSON
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Failed to parse theme response');
+    }
+
+    const theme = JSON.parse(jsonMatch[0]);
+    res.json({ theme });
+  } catch (err) {
+    console.error('Generate theme error:', err);
     res.status(500).json({ error: err.message });
   }
 });

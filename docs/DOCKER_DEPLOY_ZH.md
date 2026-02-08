@@ -257,7 +257,8 @@ open http://SERVER_IP:80     # macOS
    curl -I http://SERVER_IP:3001/api/config
    ```
    可用 `--resolve your.domain.com:80:SERVER_IP` 手动校验域名解析。
-5. **未来切换 HTTPS**：待证书与域名准备就绪后，再创建 `nginx/ssl/`、启用 `with-nginx` profile 并复用此前的 HTTP 配置。
+5. **静态资源**：前端容器不再挂载 `./assets`/`./outputs`，`/assets`、`/outputs` 请求由前端 Nginx 反代到后端；请确保后端的 `./assets`、`./outputs` 目录已挂载并赋权，否则素材仍会返回 404。
+6. **未来切换 HTTPS**：待证书与域名准备就绪后，再创建 `nginx/ssl/`、启用 `with-nginx` profile 并复用此前的 HTTP 配置。
 
 > 若公司已有外部反向代理/网关，可将代理层接入 HTTP 后端，SSL 仍在外保护层上终止。
 

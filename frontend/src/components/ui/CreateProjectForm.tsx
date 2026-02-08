@@ -1,6 +1,100 @@
-import { useState, useEffect } from 'react';
-import { CreateProjectRequest, fetchConfig, fetchImageStyles, ImageStyle } from '../../api/client';
-import { IconSpinner } from './Icons';
+import { useState, useEffect, useCallback } from 'react';
+import { CreateProjectRequest, fetchConfig, fetchImageStyles, generateRandomTheme, ImageStyle } from '../../api/client';
+import { IconSpinner, IconSparkles } from './Icons';
+
+// 10个引发共鸣、深入人心的视频主题
+const THEME_OPTIONS = [
+  {
+    id: 'city_lonely',
+    title: '城市独居时刻',
+    description: '一个人吃饭，一个人散步，一个人看窗外的城市灯火',
+    icon: '🏙️',
+    tags: ['独居', '都市', '共鸣']
+  },
+  {
+    id: 'midnight_convenience',
+    title: '深夜便利店',
+    description: '凌晨两点的便利店，收银员和夜归人的故事',
+    icon: '🏪',
+    tags: ['深夜', '温暖', '治愈']
+  },
+  {
+    id: 'parents_back',
+    title: '父母的背影',
+    description: '那些我们不敢正视的瞬间，父母也在慢慢变老',
+    icon: '👨‍👩‍👧',
+    tags: ['亲情', '感恩', '催泪']
+  },
+  {
+    id: 'graduation_year',
+    title: '毕业那年',
+    description: '青春不散场，我们笑着说再见，却各自红了眼眶',
+    icon: '🎓',
+    tags: ['青春', '告别', '回忆']
+  },
+  {
+    id: 'drift_alone',
+    title: '一个人的漂泊',
+    description: '异地他乡的夜晚，既坚强又脆弱的自己',
+    icon: '✈️',
+    tags: ['北漂', '沪漂', '梦想']
+  },
+  {
+    id: 'childhood_memory',
+    title: '童年记忆碎片',
+    description: '那些再也回不去的夏天，和早已走散的人',
+    icon: '🪁',
+    tags: ['童年', '怀旧', '温暖']
+  },
+  {
+    id: 'long_distance_love',
+    title: '异地恋的思念',
+    description: '隔着屏幕的爱，无数次的说晚安和我想你',
+    icon: '💌',
+    tags: ['爱情', '等待', '坚持']
+  },
+  {
+    id: 'adult_breakdown',
+    title: '成年人的崩溃瞬间',
+    description: '那些藏在卫生间里，和躲在角落里的无声哭泣',
+    icon: '🌧️',
+    tags: ['成长', '压力', '真实']
+  },
+  {
+    id: 'city_warmth',
+    title: '城市的温度',
+    description: '陌生人之间的善意，让这座城市不再冰冷',
+    icon: '☀️',
+    tags: ['温暖', '善意', '美好']
+  },
+  {
+    id: 'letter_to_future',
+    title: '时光慢递',
+    description: '写给三年后的自己，那些期待和遗憾',
+    icon: '📮',
+    tags: ['未来', '期许', '成长']
+  }
+] as const;
+
+type ThemeId = typeof THEME_OPTIONS[number]['id'];
+
+// 用于跟踪已使用的主题（在当前会话中）
+let usedThemes: Set<ThemeId> = new Set();
+
+function getRandomTheme(): typeof THEME_OPTIONS[number] | null {
+  // 获取未使用的主题
+  const availableThemes = THEME_OPTIONS.filter(t => !usedThemes.has(t.id));
+
+  if (availableThemes.length === 0) {
+    // 所有主题都已使用，重置计数器
+    usedThemes.clear();
+    return THEME_OPTIONS[Math.floor(Math.random() * THEME_OPTIONS.length)];
+  }
+
+  const selected = availableThemes[Math.floor(Math.random() * availableThemes.length)];
+  usedThemes.add(selected.id);
+  return selected;
+}
 
 interface CreateProjectFormProps {
   onSubmit: (data: CreateProjectRequest) => Promise<void>;
@@ -20,6 +114,8 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
   const [useCustomText, setUseCustomText] = useState(false);
   const [imageStyles, setImageStyles] = useState<ImageStyle[]>([]);
   const [selectedStyleId, setSelectedStyleId] = useState<number | 'custom'>('custom');
+  const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
+  const [usedAiThemes, setUsedAiThemes] = useState<string[]>([]);
 
   // 加载默认配置和画面风格
   useEffect(() => {
@@ -76,6 +172,20 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
     }
   };
 
+  // AI生成新主题
+  const handleAiGenerateTheme = useCallback(async () => {
+    setIsGeneratingTheme(true);
+    try {
+      const theme = await generateRandomTheme(usedAiThemes);
+      setFormData(prev => ({ ...prev, theme: theme.title }));
+      setUsedAiThemes(prev => [...prev.slice(-9), theme.title]); // 保留最近10个
+    } catch (error) {
+      console.error('生成主题失败:', error);
+    } finally {
+      setIsGeneratingTheme(false);
+    }
+  }, [usedAiThemes]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* 创作模式切换 */}
@@ -102,17 +212,94 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
 
       {!useCustomText ? (
         <>
-          {/* 主题输入 */}
+          {/* 主题选择 */}
           <div>
-            <label className="input-label">视频主题 *</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="例如：城市微光、深夜食堂、独居生活"
-              value={formData.theme || ''}
-              onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-              required={!useCustomText}
-            />
+            <div className="flex items-center justify-between mb-3">
+              <label className="input-label mb-0">选择主题 *</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const theme = getRandomTheme();
+                    if (theme) {
+                      setFormData({ ...formData, theme: theme.title });
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-orange-500 rounded-lg text-white text-xs font-medium hover:from-rose-600 hover:to-orange-600 transition-all shadow-lg shadow-orange-500/20"
+                  title="从预设主题中随机选择"
+                >
+                  <IconSparkles className="w-3.5 h-3.5" />
+                  预设推荐
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAiGenerateTheme}
+                  disabled={isGeneratingTheme}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-500 rounded-lg text-white text-xs font-medium hover:from-violet-600 hover:to-purple-600 transition-all shadow-lg shadow-purple-500/20 disabled:opacity-50"
+                  title="AI生成全新的独特主题"
+                >
+                  {isGeneratingTheme ? (
+                    <IconSpinner className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <IconSparkles className="w-3.5 h-3.5" />
+                  )}
+                  AI生成
+                </button>
+              </div>
+            </div>
+
+            {/* 主题推荐卡片 */}
+            <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+              {THEME_OPTIONS.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, theme: theme.title })}
+                  className={`relative p-3 rounded-xl text-left transition-all duration-200 border ${
+                    formData.theme === theme.title
+                      ? 'bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border-indigo-500 shadow-lg shadow-indigo-500/10'
+                      : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">{theme.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-slate-200 truncate">
+                        {theme.title}
+                      </div>
+                      <div className="text-xs text-slate-500 line-clamp-2 mt-0.5">
+                        {theme.description}
+                      </div>
+                    </div>
+                    {formData.theme === theme.title && (
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full shadow-sm" />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {theme.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-1.5 py-0.5 text-[10px] rounded-md bg-slate-700/50 text-slate-400"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* 自定义主题输入 */}
+            <div className="mt-3">
+              <input
+                type="text"
+                className="input"
+                placeholder="或者输入自定义主题..."
+                value={formData.theme || ''}
+                onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
+                required={!useCustomText}
+              />
+            </div>
           </div>
 
           {/* 风格选择 */}
@@ -199,7 +386,7 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
 
       {/* 镜头数量 */}
       <div>
-        <label className="input-label">镜头数量</label>
+        <label className="input-label">最大镜头数</label>
         <div className="flex items-center gap-4">
           <input
             type="range"
@@ -211,6 +398,7 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
           />
           <span className="w-8 text-center font-medium">{formData.scene_count}</span>
         </div>
+        <p className="text-xs text-slate-500 mt-1">AI 将根据内容自动生成合适的镜头数量（不超过此上限）</p>
       </div>
 
       {/* 视频设置 (Subtitle & BGM) */}

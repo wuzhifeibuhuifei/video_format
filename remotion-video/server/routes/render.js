@@ -41,22 +41,10 @@ let videoGen = null;
 let promptGen = null;
 const renderJobs = new Map();
 
-function resolveServerUrlWithAuth(cfg) {
+// 构建服务器 URL（不再需要认证，因为静态文件已开放访问）
+function resolveServerUrl(cfg) {
   const config = cfg || getConfig();
-  const authConfig = config.auth || {};
   const baseUrl = (config.remotion?.server_url || 'http://127.0.0.1:3001').replace(/\/+$/, '');
-
-  if (authConfig.enable && authConfig.username && authConfig.password) {
-    try {
-      const url = new URL(baseUrl);
-      url.username = authConfig.username;
-      url.password = authConfig.password;
-      return url.toString().replace(/\/+$/, '');
-    } catch (err) {
-      console.warn(`[resolveServerUrlWithAuth] Invalid server_url "${baseUrl}": ${err.message}`);
-    }
-  }
-
   return baseUrl;
 }
 
@@ -264,7 +252,7 @@ async function processRender(projectId, taskId) {
 
   // 3. 渲染视频
   const outputPath = path.join(videoRoot, `project_${projectId}.mp4`);
-  await renderVideo(props, outputPath, taskId);
+  await renderVideo(props, outputPath, taskId, 70);
 
   // 4. 更新数据库
   db.updateProject(projectId, { status: 'rendered', video_path: outputPath });
@@ -306,7 +294,7 @@ async function getAudioDuration(audioPath) {
 async function buildRemotionShots(shots, audioPaths, videoPaths, fps, useVideo) {
   const result = [];
   const config = getConfig();
-  const serverUrl = resolveServerUrlWithAuth(config);
+  const serverUrl = resolveServerUrl(config);
 
   for (let i = 0; i < shots.length; i++) {
     const shot = shots[i];
@@ -354,7 +342,7 @@ function buildRemotionProps(shots, fps, project, videoEffects, audioEffects) {
   const aspectRatio = project.aspect_ratio || '16:9';
   const [width, height] = getResolution(aspectRatio);
   const config = getConfig();
-  const serverUrl = resolveServerUrlWithAuth(config);
+  const serverUrl = resolveServerUrl(config);
 
   // Resolve project-level config regardless of whether we receive the parsed object or JSON string
   const projectConfig = (() => {
@@ -449,10 +437,25 @@ function getResolution(aspectRatio) {
 }
 
 // 渲染视频
-async function renderVideo(props, outputPath, taskId) {
+async function renderVideo(props, outputPath, taskId, startPercent = 70) {
   console.log(`[renderVideo] 开始渲染流程`);
   console.log(`[renderVideo] FFMPEG_PATH=${process.env.FFMPEG_PATH}`);
   console.log(`[renderVideo] FFPROBE_PATH=${process.env.FFPROBE_PATH}`);
+
+  const clampPercent = (value) => {
+    if (Number.isNaN(value)) {
+      return startPercent;
+    }
+    return Math.min(100, Math.max(startPercent, value));
+  };
+
+  const updateRenderProgress = (percent, message) => {
+    renderJobs.set(taskId, {
+      stage: 'render',
+      percent: clampPercent(percent),
+      message,
+    });
+  };
 
   // 验证 ffmpeg 可用性
   try {
@@ -472,7 +475,7 @@ async function renderVideo(props, outputPath, taskId) {
   }
 
   // 打包
-  renderJobs.set(taskId, { stage: 'render', percent: 50, message: '打包中...' });
+  updateRenderProgress(startPercent, '打包中...');
   console.log(`[renderVideo] 开始打包...`);
 
   // 确定 Remotion 入口文件路径
@@ -488,9 +491,13 @@ async function renderVideo(props, outputPath, taskId) {
     webpackOverride: (config) => config,
   });
   console.log(`[renderVideo] 打包完成`);
+  updateRenderProgress(startPercent + 2, '打包完成');
+
+  const renderPhaseStartPercent = clampPercent(startPercent + 5);
+  const renderPhaseRange = Math.max(1, 100 - renderPhaseStartPercent);
 
   // 选择 composition
-  renderJobs.set(taskId, { stage: 'render', percent: 55, message: '准备渲染...' });
+  updateRenderProgress(renderPhaseStartPercent, '准备渲染...');
   console.log(`[renderVideo] 选择 composition...`);
   const browserExecutable = bundledChromeExecutable;
   const composition = await selectComposition({
@@ -504,6 +511,13 @@ async function renderVideo(props, outputPath, taskId) {
 
   // 渲染
   console.log(`[renderVideo] 开始渲染视频到: ${outputPath}`);
+
+  // 配置Chrome临时目录到D盘，避免C盘空间不足
+  const tempDir = path.resolve(__dirname, '../temp');
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+
   await renderMedia({
     composition,
     serveUrl: bundled,
@@ -512,11 +526,17 @@ async function renderVideo(props, outputPath, taskId) {
     inputProps: props,
     browserExecutable,
     timeoutInMilliseconds: 300000, // 5 分钟超时
+    chromiumOptions: {
+      userDataDir: tempDir,
+    },
     onProgress: ({ progress }) => {
       console.log(`[renderVideo] 渲染进度: ${(progress * 100).toFixed(1)}%`);
+      const percent = clampPercent(
+        renderPhaseStartPercent + Math.round(progress * renderPhaseRange)
+      );
       renderJobs.set(taskId, {
         stage: 'render',
-        percent: 55 + Math.round(progress * 45),
+        percent,
         message: `渲染中 ${Math.round(progress * 100)}%`,
       });
     },

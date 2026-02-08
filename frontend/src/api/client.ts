@@ -201,6 +201,29 @@ export async function updateShots(projectId: number, shots: Shot[]): Promise<Pro
   return res.json();
 }
 
+// 更新项目配置
+export async function updateProjectConfig(
+  projectId: number,
+  config: {
+    aspect_ratio?: string;
+    enable_subtitle?: boolean;
+    audio_effects?: { enable_bgm?: boolean; bgm_volume?: number };
+    video_effects?: Record<string, unknown>;
+    timing?: Record<string, unknown>;
+  }
+): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/config`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: '更新配置失败' }));
+    throw new Error(err.detail || '更新配置失败');
+  }
+  return res.json();
+}
+
 export async function deleteProject(id: number): Promise<void> {
   const res = await authFetch(`${API_BASE}/projects/${id}`, {
     method: 'DELETE',
@@ -496,4 +519,23 @@ export async function testApiConnection(
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'API test failed');
   return data;
+}
+
+// 生成随机视频主题
+export async function generateRandomTheme(excludedThemes?: string[]): Promise<{
+  title: string;
+  description: string;
+  tags: string[];
+}> {
+  const res = await authFetch(`${API_BASE}/projects/generate-theme`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ excludedThemes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: '生成主题失败' }));
+    throw new Error(err.detail || '生成主题失败');
+  }
+  const data = await res.json();
+  return data.theme;
 }

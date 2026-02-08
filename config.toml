@@ -128,7 +128,7 @@ default_scene_count = 8
 # 默认故事风格
 default_story_tone = "真诚有态度"
 # 默认全局画面风格提示
-default_image_style = "简笔画风格，白色线条手绘，纯色克莱因蓝背景(#002FA7)，极简主义，干净利落的线条，儿童绘本插画感"
+default_image_style = "简笔画风格，白色线条手绘，纯色克莱因蓝背景(#002FA7)，极简主义，干净利落的线条，儿童绘本插画感，画面人物使用火柴人形象"
 # 默认负面提示词
 default_negative_prompt = "low quality, blurry, distorted anatomy, watermark"
 # 自动生成的项目图片目录（实际路径会以项目ID拼接子目录）

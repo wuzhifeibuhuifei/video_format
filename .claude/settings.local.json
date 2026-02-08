@@ -19,7 +19,14 @@
       "Bash(uv sync)",
       "Bash(git push:*)",
       "Bash(npm install:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nRegenerate audio for project 41 shots 9-13 using MiniMax TTS API\n\nAdded audio files for shots 9-13 with updated voice synthesis. Also added regenerate_audio.js utility script for batch audio regeneration.\n\nCo-Authored-By: Claude \\(GLM-4.7\\) <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRegenerate audio for project 41 shots 9-13 using MiniMax TTS API\n\nAdded audio files for shots 9-13 with updated voice synthesis. Also added regenerate_audio.js utility script for batch audio regeneration.\n\nCo-Authored-By: Claude \\(GLM-4.7\\) <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(start:*)",
+      "Bash(powershell -Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri ''https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'' -OutFile ''C:\\\\ffmpeg\\\\ffmpeg.zip''\")",
+      "Bash(test:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api:*)",
+      "Bash(curl:*)",
+      "Bash(powershell:*)"
     ]
   }
 }
