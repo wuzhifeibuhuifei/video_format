@@ -122,11 +122,11 @@ function generateTextShadow(strokeWidth: number): string {
 }
 
 function stripPunctuation(s: string): string {
-  return s.replace(/[，。！？；、,\.!\?;]+$/g, '');
+  return s.replace(/[，。！？；、：,\.!\?;:]+$/g, '');
 }
 
 function splitBySentence(text: string): string[] {
-  const parts = text.split(/(?<=[，。！？；、,\.!\?;])/);
+  const parts = text.split(/(?<=[，。！？；、：,\.!\?;:])/);
   return parts.filter((s) => s.length > 0);
 }
 

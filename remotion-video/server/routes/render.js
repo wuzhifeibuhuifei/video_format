@@ -204,12 +204,23 @@ async function processRender(projectId, taskId) {
 
       console.log(`[${ttsProgress}%] 生成语音 ${i + 1}/${shots.length}: ${shot.script_text.substring(0, 20)}...`);
 
+      // 检测文案是否变化，若变化则删除旧音频和字幕强制重新生成
+      if (fs.existsSync(audioPath)) {
+        const oldMeta = shot.metadata_json ? JSON.parse(shot.metadata_json) : {};
+        if (!oldMeta.scriptTextHash || oldMeta.scriptTextHash !== shot.script_text) {
+          console.log(`  ⚠ 文案已变化，删除旧音频重新生成`);
+          fs.unlinkSync(audioPath);
+          const oldSrt = shot.subtitle_path ? resolveAssetPath(shot.subtitle_path) : null;
+          if (oldSrt && fs.existsSync(oldSrt)) fs.unlinkSync(oldSrt);
+        }
+      }
+
       if (!fs.existsSync(audioPath)) {
         const ttsResult = await tts.synthesize(shot.script_text, audioPath, { voice_id: shot.voice_id });
         console.log(`  ✓ 已保存: ${audioPath}`);
         // 存储字幕时间戳到 metadata_json
         if (ttsResult.subtitleTimestamps) {
-          const metadata = { subtitleTimestamps: ttsResult.subtitleTimestamps };
+          const metadata = { subtitleTimestamps: ttsResult.subtitleTimestamps, scriptTextHash: shot.script_text };
           db.updateShot(shot.id, { metadata_json: JSON.stringify(metadata) });
           console.log(`  ✓ 已保存字幕时间戳: ${ttsResult.subtitleTimestamps.length} 条`);
         }
@@ -957,13 +968,18 @@ async function processGenerateAndBurnSubtitles(projectId, taskId, options = {}) 
         message: `生成字幕 ${i + 1}/${shots.length}`,
       });
 
-      // 检查是否已有字幕文件
+      // 检查是否已有字幕文件（文案变化时强制重新生成）
       if (shot.subtitle_path) {
         const existingSrt = resolveAssetPath(shot.subtitle_path);
         if (fs.existsSync(existingSrt)) {
-          console.log(`[generate-and-burn] Shot ${shotIndex}: 已有字幕，跳过`);
-          skippedCount++;
-          continue;
+          const oldMeta = shot.metadata_json ? JSON.parse(shot.metadata_json) : {};
+          if (oldMeta.scriptTextHash && oldMeta.scriptTextHash === shot.script_text) {
+            console.log(`[generate-and-burn] Shot ${shotIndex}: 已有字幕且文案未变，跳过`);
+            skippedCount++;
+            continue;
+          }
+          console.log(`[generate-and-burn] Shot ${shotIndex}: 文案已变化，重新生成字幕`);
+          fs.unlinkSync(existingSrt);
         }
       }
 
@@ -998,7 +1014,7 @@ async function processGenerateAndBurnSubtitles(projectId, taskId, options = {}) 
         if (timestamps && timestamps.length > 0) {
           timestamps = timestamps.map(ts => ({
             ...ts,
-            text: ts.text.replace(/[，。！？；、,\.!\?;]+$/g, '').trim(),
+            text: ts.text.replace(/[，。！？；、：,\.!\?;:]+$/g, '').trim(),
           }));
         }
 
@@ -1010,7 +1026,7 @@ async function processGenerateAndBurnSubtitles(projectId, taskId, options = {}) 
         const relativeSrtPath = shot.audio_path.replace(/\\/g, '/').replace(/\.mp3$/i, '.srt');
         db.updateShot(shot.id, { subtitle_path: relativeSrtPath });
         if (timestamps) {
-          db.updateShot(shot.id, { metadata_json: JSON.stringify({ subtitleTimestamps: timestamps }) });
+          db.updateShot(shot.id, { metadata_json: JSON.stringify({ subtitleTimestamps: timestamps, scriptTextHash: shot.script_text }) });
         }
 
         console.log(`[generate-and-burn] Shot ${shotIndex}: 生成 ${timestamps?.length || 0} 条字幕`);

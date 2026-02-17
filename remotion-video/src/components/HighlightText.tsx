@@ -112,7 +112,9 @@ const SingleHighlight: React.FC<Props> = ({
             lineHeight: 1.3,
           }}
         >
-          {text}
+          {text.split(/(?<=[，。！？；、：,\.!\?;:])/).map((seg, i) => (
+            <React.Fragment key={i}>{i > 0 && <br />}{seg}</React.Fragment>
+          ))}
         </div>
       </AbsoluteFill>
 
@@ -183,6 +185,6 @@ function getHighlightFrameRange(
 }
 
 function splitBySentence(text: string): string[] {
-  const parts = text.split(/(?<=[，。！？；、,\.!\?;])/);
+  const parts = text.split(/(?<=[，。！？；、：,\.!\?;:])/);
   return parts.filter((s) => s.length > 0);
 }

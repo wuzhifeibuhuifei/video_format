@@ -53,7 +53,7 @@ export class WhisperClient {
 
         return new Promise((resolve, reject) => {
             const python = spawn('python', [scriptPath, audioPath, modelSize, language], {
-                env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
+                env: { ...process.env, PYTHONIOENCODING: 'utf-8', HF_ENDPOINT: process.env.HF_ENDPOINT || 'https://hf-mirror.com' },
             });
 
             let stdout = '';
@@ -239,7 +239,7 @@ export class WhisperClient {
      * 按标点符号分割文本
      */
     _splitBySentence(text) {
-        const parts = text.split(/(?<=[，。！？；、,\\.!\\?;])/);
+        const parts = text.split(/(?<=[，。！？；、：,\\.!\\?;:])/);
         return parts.filter((s) => s.trim().length > 0);
     }
 }

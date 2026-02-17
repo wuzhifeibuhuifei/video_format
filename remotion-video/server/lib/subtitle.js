@@ -350,7 +350,12 @@ export async function burnSubtitlesWithHighlights(
   };
 
   writeSrt(normalEntries, normalSrtPath);
-  writeSrt(centerSrtEntries, centerSrtPath);
+  // 居中字幕在标点处换行，避免超出屏幕
+  const centerWithBreaks = centerSrtEntries.map(e => ({
+    ...e,
+    text: e.text.replace(/([，。！？；、：,\.!\?;:])/g, '$1\\N'),
+  }));
+  writeSrt(centerWithBreaks, centerSrtPath);
 
   // FFmpeg 路径转义
   const escapeFfmpegPath = (p) =>

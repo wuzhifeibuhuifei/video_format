@@ -200,7 +200,7 @@ export class TTSClient {
     const result = [];
 
     for (const ts of timestamps) {
-      const sentences = ts.text.split(/(?<=[，。！？；、,\.!\?;])/).filter(s => s.trim().length > 0);
+      const sentences = ts.text.split(/(?<=[，。！？；、：,\.!\?;:])/).filter(s => s.trim().length > 0);
 
       // 单句或空文本，直接保留
       if (sentences.length <= 1) {
@@ -225,7 +225,7 @@ export class TTSClient {
       for (let i = 0; i < sentences.length; i++) {
         const sentenceDuration = (weights[i] / totalWeight) * duration;
         result.push({
-          text: sentences[i].replace(/[，。！？；、,\.!\?;]+$/g, '').trim(),
+          text: sentences[i].replace(/[，。！？；、：,\.!\?;:]+$/g, '').trim(),
           startMs: currentMs,
           endMs: currentMs + sentenceDuration,
         });
