@@ -103,6 +103,7 @@ interface CreateProjectFormProps {
 }
 
 export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProjectFormProps) {
+  const [category, setCategory] = useState<'emotion' | 'book_analysis'>('emotion');
   const [formData, setFormData] = useState<CreateProjectRequest>({
     theme: '',
     style: '温暖治愈',
@@ -153,7 +154,7 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    await onSubmit({ ...formData, category });
   };
 
   const handleStyleSelect = (styleId: number | 'custom') => {
@@ -188,6 +189,32 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* 项目分类选择 */}
+      <div className="flex gap-2 p-1 bg-slate-700/50 rounded-lg">
+        <button
+          type="button"
+          onClick={() => setCategory('emotion')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+            category === 'emotion' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          情感短视频
+        </button>
+        <button
+          type="button"
+          onClick={() => setCategory('book_analysis')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+            category === 'book_analysis' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          读书解析
+        </button>
+      </div>
+
+      {category === 'emotion' ? (
+      <>
+      {/* ===== 情感短视频模式 ===== */}
+
       {/* 创作模式切换 */}
       <div className="flex gap-2 p-1 bg-slate-700/50 rounded-lg">
         <button
@@ -332,7 +359,7 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
         </div>
       )}
 
-      {/* 全局画面风格 */}
+      {/* 全局画面风格（情感模式专属） */}
       <div>
         <label className="input-label">全局画面风格</label>
         {imageStyles.length > 0 && (
@@ -363,7 +390,58 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
         </p>
       </div>
 
-      {/* 画面比例 */}
+      {/* 镜头数量（情感模式专属） */}
+      <div>
+        <label className="input-label">最大镜头数</label>
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min="3"
+            max="15"
+            value={formData.scene_count || 6}
+            onChange={(e) => setFormData({ ...formData, scene_count: parseInt(e.target.value) })}
+            className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+          />
+          <span className="w-8 text-center font-medium">{formData.scene_count}</span>
+        </div>
+        <p className="text-xs text-slate-500 mt-1">AI 将根据内容自动生成合适的镜头数量（不超过此上限）</p>
+      </div>
+      </>
+      ) : (
+      <>
+      {/* ===== 读书解析模式 ===== */}
+
+      {/* 书名/标题 */}
+      <div>
+        <label className="input-label">书名 / 标题 *</label>
+        <input
+          type="text"
+          className="input"
+          placeholder="例如：《人类简史》深度解读"
+          value={formData.theme || ''}
+          onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
+          required
+        />
+      </div>
+
+      {/* 文案内容 */}
+      <div>
+        <label className="input-label">解析文案 *</label>
+        <textarea
+          className="input min-h-[200px] resize-y"
+          placeholder={"输入读书解析文案，每段之间用换行分隔...\n\n例如：\n这本书讲述了人类从远古到现代的发展历程。\n\n作者认为，人类之所以能够主宰地球，关键在于我们能够创造并相信虚构的故事。"}
+          value={formData.insight_text || ''}
+          onChange={(e) => setFormData({ ...formData, insight_text: e.target.value })}
+          required
+        />
+        <p className="text-xs text-slate-500 mt-1">
+          每个自然段落将生成一个独立的语音片段，建议每段 50-200 字
+        </p>
+      </div>
+      </>
+      )}
+
+      {/* 画面比例（共享） */}
       <div>
         <label className="input-label">画面比例</label>
         <div className="grid grid-cols-4 gap-2">
@@ -382,23 +460,6 @@ export function CreateProjectForm({ onSubmit, onCancel, loading }: CreateProject
             </button>
           ))}
         </div>
-      </div>
-
-      {/* 镜头数量 */}
-      <div>
-        <label className="input-label">最大镜头数</label>
-        <div className="flex items-center gap-4">
-          <input
-            type="range"
-            min="3"
-            max="15"
-            value={formData.scene_count || 6}
-            onChange={(e) => setFormData({ ...formData, scene_count: parseInt(e.target.value) })}
-            className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-          />
-          <span className="w-8 text-center font-medium">{formData.scene_count}</span>
-        </div>
-        <p className="text-xs text-slate-500 mt-1">AI 将根据内容自动生成合适的镜头数量（不超过此上限）</p>
       </div>
 
       {/* 视频设置 (Subtitle & BGM) */}

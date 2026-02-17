@@ -56,7 +56,10 @@ pan_y_range = 50
 movement_type = "zoom_in"
 
 # 是否显示字幕
-enable_subtitle = false
+enable_subtitle = true
+
+# 重点标注文字弹出音效路径（相对于项目根目录，留空则无音效）
+highlight_sfx_path = "assets/audio/highlight_sfx.mp3"
 
 [audio_effects]
 # 是否启用背景音乐
@@ -119,8 +122,26 @@ sample_rate = 32000
 bitrate = 128000
 format = "mp3"
 channel = 1
-subtitle_enable = false
+subtitle_enable = true
 aigc_watermark = false
+
+[whisper]
+# 是否启用 Whisper 字幕时间戳生成
+enable = true
+# 使用本地 faster-whisper (true) 或 OpenAI API (false)
+use_local = true
+# 本地模型大小: tiny, base, small, medium, large-v3
+model_size = "base"
+# OpenAI API 密钥 (仅在 use_local = false 时需要)
+api_key = ""
+# OpenAI 模型 (仅在 use_local = false 时使用)
+model = "whisper-1"
+# 语言代码
+language = "zh"
+# 时间戳粒度: "word" | "segment"
+timestamp_granularity = "word"
+# 分句模式: "punctuation" (按标点符号) | "whisper-segments" (使用 Whisper 分段)
+split_pattern = "punctuation"
 
 [workflow]
 # 默认分镜数量

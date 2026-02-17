@@ -1,4 +1,6 @@
 export { KenBurnsImage } from './KenBurnsImage';
 export { Subtitle } from './Subtitle';
+export { HighlightText } from './HighlightText';
 export { BackgroundMusic } from './BackgroundMusic';
 export { Scene } from './Scene';
+export { BookAnalysisScene } from './BookAnalysisScene';

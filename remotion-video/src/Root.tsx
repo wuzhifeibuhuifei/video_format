@@ -49,6 +49,7 @@ const defaultProps: VideoCompositionProps = {
   subtitlePosition: 'bottom',
   subtitleFontSize: 60,
   subtitleStrokeWidth: 6,
+  subtitleColor: '#ffffff',
   enableBgm: false,
   bgmUrl: undefined,
   bgmVolume: 0.2,
@@ -57,11 +58,30 @@ const defaultProps: VideoCompositionProps = {
   transitionDuration: 0.5,
 };
 
+// 过滤活跃段落（与 VideoComposition 中的 activeShots 逻辑保持一致）
+const getActiveShots = (props: VideoCompositionProps) => {
+  const isBookAnalysis = props.category === 'book_analysis';
+  return props.shots.filter((shot) => {
+    if (isBookAnalysis) {
+      const hasText = !!(shot.scriptText && shot.scriptText.trim());
+      if (!hasText && !shot.backgroundUrl) {
+        return false;
+      }
+    }
+    return true;
+  });
+};
+
 // 计算总时长
 const calculateTotalDuration = (props: VideoCompositionProps): number => {
-  const shotsDuration = props.shots.reduce((sum, s) => sum + s.durationInFrames, 0);
+  const active = getActiveShots(props);
+  const shotsDuration = active.reduce((sum, s) => sum + s.durationInFrames, 0);
+  const isBookAnalysis = props.category === 'book_analysis';
+  if (isBookAnalysis) {
+    return shotsDuration;
+  }
   const transitionFrames = Math.round(props.transitionDuration * props.fps);
-  const transitionsCount = Math.max(0, props.shots.length - 1);
+  const transitionsCount = Math.max(0, active.length - 1);
   return shotsDuration - transitionsCount * transitionFrames;
 };
 

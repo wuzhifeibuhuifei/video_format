@@ -86,3 +86,4 @@ npm run build
 - **Context**: Use `Context7 MCP` for library/API documentation or complex logic generation.
 - **Remotion**: Refer to remotion.dev for video composition patterns.
 - **Filesystem**: Do not manually edit `projects.db`; use the `ProjectDatabase` class in `lib/database.js`.
+- 用中文回答我

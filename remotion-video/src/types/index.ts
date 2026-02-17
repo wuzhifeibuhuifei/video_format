@@ -1,3 +1,10 @@
+// 字幕时间戳条目（来自 TTS API）
+export type SubtitleTimestamp = {
+  text: string;
+  startMs: number;
+  endMs: number;
+};
+
 // 单个镜头数据
 export type Shot = {
   index: number;
@@ -6,6 +13,12 @@ export type Shot = {
   videoUrl?: string | null;  // AI 生成的分段视频 URL
   audioUrl: string;
   durationInFrames: number;
+  backgroundUrl?: string;
+  backgroundType?: 'image' | 'video';
+  backgroundVideoDurationInFrames?: number;  // 背景视频原始时长（帧）
+  highlightText?: string;  // 重点标注文字
+  highlightSfxUrl?: string;  // 该段落自定义重点标注音效 URL
+  subtitleTimestamps?: SubtitleTimestamp[];  // TTS 返回的字幕时间戳
 };
 
 // Ken Burns 运动类型
@@ -21,12 +34,20 @@ export type KenBurnsType =
 // 字幕位置
 export type SubtitlePosition = 'top' | 'center' | 'bottom';
 
+// 项目分类
+export type ProjectCategory = 'emotion' | 'book_analysis';
+
 // 视频合成 Props
 export type VideoCompositionProps = {
   shots: Shot[];
   fps: number;
   width: number;
   height: number;
+  // 项目分类与背景
+  category?: ProjectCategory;
+  backgroundUrl?: string;
+  backgroundType?: 'image' | 'video';
+  backgroundVideoDurationInFrames?: number;  // 全局背景视频原始时长（帧），用于循环
   // Ken Burns 效果
   enableKenBurns: boolean;
   kenBurnsType: KenBurnsType;
@@ -37,6 +58,7 @@ export type VideoCompositionProps = {
   subtitlePosition: SubtitlePosition;
   subtitleFontSize: number;
   subtitleStrokeWidth: number;
+  subtitleColor: string;
   // BGM
   enableBgm: boolean;
   bgmUrl?: string;
@@ -45,4 +67,6 @@ export type VideoCompositionProps = {
   bgmFadeOut: number;
   // 转场
   transitionDuration: number;
+  // 重点文字音效
+  highlightSfxUrl?: string;
 };

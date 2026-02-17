@@ -64,7 +64,7 @@ const db = new ProjectDatabase(path.join(__dirname, '../..', dbPath));
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(fileUpload({
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB（支持视频背景上传）
   abortOnLimit: true,
 }));
 

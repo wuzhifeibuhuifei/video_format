@@ -32,6 +32,18 @@ export class ProjectDatabase {
     this._migrateAddVideoFields();
     // 迁移：添加角色形象字段到 projects 表
     this._migrateAddCharacterImage();
+    // 迁移：添加读书解析相关字段到 projects 表
+    this._migrateAddBookAnalysisFields();
+    // 迁移：添加段落独立背景字段到 shots 表
+    this._migrateAddShotBackgroundFields();
+    // 迁移：添加重点文字标注字段到 shots 表
+    this._migrateAddHighlightTextField();
+    // 迁移：添加重点标注音效字段到 shots 表
+    this._migrateAddHighlightSfxField();
+    // 迁移：添加字幕文件路径字段到 shots 表
+    this._migrateAddSubtitlePathField();
+    // 迁移：添加字幕和烧录视频字段到 projects 表
+    this._migrateAddProjectSubtitleFields();
 
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS shots (
@@ -66,8 +78,8 @@ export class ProjectDatabase {
   createProject(data) {
     const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
     const stmt = this.db.prepare(`
-      INSERT INTO projects (theme, style, aspect_ratio, status, scene_count, config_json, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO projects (theme, style, aspect_ratio, status, scene_count, config_json, category, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       data.theme,
@@ -76,6 +88,7 @@ export class ProjectDatabase {
       data.status || 'draft',
       data.scene_count || 8,
       JSON.stringify(data.config || {}),
+      data.category || 'emotion',
       now,
       now
     );
@@ -170,6 +183,24 @@ export class ProjectDatabase {
     this.db.prepare(sql).run(...values);
   }
 
+  deleteShot(id) {
+    const shot = this.db.prepare('SELECT project_id FROM shots WHERE id = ?').get(id);
+    this.db.prepare('DELETE FROM shots WHERE id = ?').run(id);
+    if (shot) {
+      this.reindexShots(shot.project_id);
+    }
+  }
+
+  reindexShots(projectId) {
+    const shots = this.db.prepare(
+      'SELECT id FROM shots WHERE project_id = ? ORDER BY display_index'
+    ).all(projectId);
+    const stmt = this.db.prepare('UPDATE shots SET display_index = ? WHERE id = ?');
+    for (let i = 0; i < shots.length; i++) {
+      stmt.run(i + 1, shots[i].id);
+    }
+  }
+
   deleteShots(projectId) {
     this.db.prepare('DELETE FROM shots WHERE project_id = ?').run(projectId);
   }
@@ -259,6 +290,78 @@ export class ProjectDatabase {
     // 添加 character_image 字段
     if (!columnNames.includes('character_image')) {
       this.db.exec('ALTER TABLE projects ADD COLUMN character_image TEXT');
+    }
+  }
+
+  // 数据库迁移：添加读书解析相关字段
+  _migrateAddBookAnalysisFields() {
+    const columns = this.db.pragma('table_info(projects)');
+    const columnNames = columns.map(c => c.name);
+
+    if (!columnNames.includes('category')) {
+      this.db.exec("ALTER TABLE projects ADD COLUMN category TEXT DEFAULT 'emotion'");
+    }
+    if (!columnNames.includes('background_type')) {
+      this.db.exec('ALTER TABLE projects ADD COLUMN background_type TEXT');
+    }
+    if (!columnNames.includes('background_path')) {
+      this.db.exec('ALTER TABLE projects ADD COLUMN background_path TEXT');
+    }
+  }
+
+  // 数据库迁移：添加段落独立背景字段
+  _migrateAddShotBackgroundFields() {
+    const columns = this.db.pragma('table_info(shots)');
+    const columnNames = columns.map(c => c.name);
+
+    if (!columnNames.includes('background_path')) {
+      this.db.exec('ALTER TABLE shots ADD COLUMN background_path TEXT');
+    }
+    if (!columnNames.includes('background_type')) {
+      this.db.exec('ALTER TABLE shots ADD COLUMN background_type TEXT');
+    }
+  }
+
+  // 数据库迁移：添加重点文字标注字段
+  _migrateAddHighlightTextField() {
+    const columns = this.db.pragma('table_info(shots)');
+    const columnNames = columns.map(c => c.name);
+
+    if (!columnNames.includes('highlight_text')) {
+      this.db.exec('ALTER TABLE shots ADD COLUMN highlight_text TEXT');
+    }
+  }
+
+  // 数据库迁移：添加重点标注自定义音效字段
+  _migrateAddHighlightSfxField() {
+    const columns = this.db.pragma('table_info(shots)');
+    const columnNames = columns.map(c => c.name);
+
+    if (!columnNames.includes('highlight_sfx_path')) {
+      this.db.exec('ALTER TABLE shots ADD COLUMN highlight_sfx_path TEXT');
+    }
+  }
+
+  // 迁移：添加字幕文件路径字段
+  _migrateAddSubtitlePathField() {
+    const columns = this.db.pragma('table_info(shots)');
+    const columnNames = columns.map(c => c.name);
+
+    if (!columnNames.includes('subtitle_path')) {
+      this.db.exec('ALTER TABLE shots ADD COLUMN subtitle_path TEXT');
+    }
+  }
+
+  // 迁移：添加字幕和烧录视频字段到 projects 表
+  _migrateAddProjectSubtitleFields() {
+    const columns = this.db.pragma('table_info(projects)');
+    const columnNames = columns.map(c => c.name);
+
+    if (!columnNames.includes('subtitle_path')) {
+      this.db.exec('ALTER TABLE projects ADD COLUMN subtitle_path TEXT');
+    }
+    if (!columnNames.includes('video_with_subtitles_path')) {
+      this.db.exec('ALTER TABLE projects ADD COLUMN video_with_subtitles_path TEXT');
     }
   }
 }

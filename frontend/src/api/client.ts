@@ -50,10 +50,15 @@ export interface Project {
   status: string;
   created_at: string;
   video_path?: string;
+  subtitle_path?: string;
+  video_with_subtitles_path?: string;
   shots?: Shot[];
   config?: ProjectConfig;
   preview_text?: string;
   character_image?: string;
+  category?: 'emotion' | 'book_analysis';
+  background_type?: 'image' | 'video';
+  background_path?: string;
 }
 
 export interface Shot {
@@ -63,17 +68,27 @@ export interface Shot {
   image_prompt: string;
   negative_prompt: string;
   image_path: string;
+  audio_path?: string;
+  subtitle_path?: string;
   voice_id?: string;
   video_prompt?: string;
   video_path?: string;
   video_status?: 'pending' | 'generating' | 'completed' | 'failed';
+  background_path?: string;
+  background_type?: 'image' | 'video';
+  highlight_text?: string;
+  highlight_sfx_path?: string;
 }
 
 export interface ProjectConfig {
   image_style?: string;
   negative_prompt?: string;
+  enable_subtitle?: boolean;
+  subtitle_font_size?: number;
+  subtitle_color?: string;
   voice_setting?: VoiceSetting;
   video_effects?: VideoEffects;
+  audio_effects?: AudioEffects;
   audio_effects_config?: AudioEffects;
   timing?: TimingConfig;
 }
@@ -150,6 +165,7 @@ export interface CreateProjectRequest {
   video_effects?: VideoEffects;
   audio_effects?: AudioEffects;
   timing?: TimingConfig;
+  category?: 'emotion' | 'book_analysis';
 }
 
 // 获取系统默认配置
@@ -201,12 +217,44 @@ export async function updateShots(projectId: number, shots: Shot[]): Promise<Pro
   return res.json();
 }
 
+export async function addShot(
+  projectId: number,
+  scriptText: string,
+  afterIndex?: number
+): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/shots`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ script_text: scriptText, after_index: afterIndex }),
+  });
+  if (!res.ok) throw new Error('添加段落失败');
+  return res.json();
+}
+
+export async function duplicateShot(projectId: number, shotId: number): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/duplicate`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('复制段落失败');
+  return res.json();
+}
+
+export async function deleteShot(projectId: number, shotId: number): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/shots/${shotId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('删除段落失败');
+  return res.json();
+}
+
 // 更新项目配置
 export async function updateProjectConfig(
   projectId: number,
   config: {
     aspect_ratio?: string;
     enable_subtitle?: boolean;
+    subtitle_font_size?: number;
+    subtitle_color?: string;
     audio_effects?: { enable_bgm?: boolean; bgm_volume?: number };
     video_effects?: Record<string, unknown>;
     timing?: Record<string, unknown>;
@@ -272,11 +320,114 @@ export async function uploadShotImage(projectId: number, shotId: number, file: F
   return res.json();
 }
 
+export async function uploadShotBackground(projectId: number, shotId: number, file: File): Promise<Project> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const authHeader = getAuthHeader();
+  const headers: HeadersInit = {};
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
+  }
+
+  const res = await fetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/background`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    clearAuth();
+    window.location.href = '/login';
+    throw new Error('认证失败，请重新登录');
+  }
+  if (!res.ok) throw new Error('上传段落背景失败');
+  return res.json();
+}
+
+export async function deleteShotBackground(projectId: number, shotId: number): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/background`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('删除段落背景失败');
+  return res.json();
+}
+
+export async function uploadShotHighlightSfx(projectId: number, shotId: number, file: File): Promise<Project> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const authHeader = getAuthHeader();
+  const headers: HeadersInit = {};
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
+  }
+
+  const res = await fetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/highlight-sfx`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    clearAuth();
+    window.location.href = '/login';
+    throw new Error('认证失败，请重新登录');
+  }
+  if (!res.ok) throw new Error('上传重点标注音效失败');
+  return res.json();
+}
+
+export async function deleteShotHighlightSfx(projectId: number, shotId: number): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/highlight-sfx`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('删除重点标注音效失败');
+  return res.json();
+}
+
 export async function confirmProject(id: number): Promise<Project> {
   const res = await authFetch(`${API_BASE}/projects/${id}/confirm`, {
     method: 'POST',
   });
   if (!res.ok) throw new Error('渲染失败');
+  return res.json();
+}
+
+export async function burnSubtitles(
+  id: number,
+  options?: {
+    fontSize?: number;
+    fontColor?: string;
+    position?: 'top' | 'bottom';
+  }
+): Promise<{ success: boolean; videoPath: string }> {
+  const res = await authFetch(`${API_BASE}/projects/${id}/burn-subtitles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options || {}),
+  });
+  if (!res.ok) throw new Error('字幕烧录失败');
+  return res.json();
+}
+
+export async function generateAndBurnSubtitles(
+  id: number,
+  options?: {
+    fontSize?: number;
+    fontColor?: string;
+    position?: 'top' | 'bottom';
+  }
+): Promise<{ success: boolean; videoPath: string }> {
+  const res = await authFetch(`${API_BASE}/projects/${id}/generate-and-burn-subtitles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options || {}),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error || '字幕生成与烧录失败');
+  }
   return res.json();
 }
 
@@ -445,12 +596,50 @@ export async function deleteCharacterImage(projectId: number): Promise<Project> 
   return res.json();
 }
 
+// 读书解析背景上传
+export async function uploadBackground(projectId: number, file: File): Promise<Project> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const authHeader = getAuthHeader();
+  const headers: HeadersInit = {};
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
+  }
+
+  const res = await fetch(`${API_BASE}/projects/${projectId}/background`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    clearAuth();
+    window.location.href = '/login';
+    throw new Error('认证失败，请重新登录');
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: '上传背景失败' }));
+    throw new Error(err.error || '上传背景失败');
+  }
+  return res.json();
+}
+
+export async function deleteBackground(projectId: number): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/background`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('删除背景失败');
+  return res.json();
+}
+
 // 资产相关类型
 export interface AssetInfo {
   path: string;
   size: number;
   exists: boolean;
   shotIndex?: number;
+  shotId?: number;
 }
 
 export interface AssetSummary {
@@ -465,6 +654,8 @@ export interface ProjectAssets {
     videos: AssetInfo[];
     characterImage: AssetInfo | null;
     finalVideo: AssetInfo | null;
+    subtitleFile: AssetInfo | null;
+    subtitledVideo: AssetInfo | null;
   };
   summary: {
     images: AssetSummary;
@@ -472,6 +663,8 @@ export interface ProjectAssets {
     videos: AssetSummary;
     characterImage: AssetSummary;
     finalVideo: AssetSummary;
+    subtitleFile: AssetSummary;
+    subtitledVideo: AssetSummary;
     total: AssetSummary;
   };
 }
@@ -479,6 +672,34 @@ export interface ProjectAssets {
 export async function fetchProjectAssets(projectId: number): Promise<ProjectAssets> {
   const res = await authFetch(`${API_BASE}/projects/${projectId}/assets`);
   if (!res.ok) throw new Error('获取项目资产失败');
+  return res.json();
+}
+
+// 删除单个 shot 的指定资源（image / audio / video）
+export async function deleteShotAsset(
+  projectId: number,
+  shotId: number,
+  assetType: 'image' | 'audio' | 'video'
+): Promise<Project> {
+  const res = await authFetch(
+    `${API_BASE}/projects/${projectId}/shots/${shotId}/asset/${assetType}`,
+    { method: 'DELETE' }
+  );
+  if (!res.ok) throw new Error('删除资源失败');
+  return res.json();
+}
+
+// 批量清理项目资源（按类型或全部）
+export async function cleanProjectAssets(
+  projectId: number,
+  type?: 'images' | 'audios' | 'videos' | 'all'
+): Promise<{ success: boolean; deletedCount: number; project: Project }> {
+  const query = type ? `?type=${type}` : '?type=all';
+  const res = await authFetch(
+    `${API_BASE}/projects/${projectId}/assets${query}`,
+    { method: 'DELETE' }
+  );
+  if (!res.ok) throw new Error('清理资源失败');
   return res.json();
 }
 

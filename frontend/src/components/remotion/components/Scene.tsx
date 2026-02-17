@@ -4,8 +4,10 @@ import type { Shot, KenBurnsType, SubtitlePosition } from '../types';
 import { KenBurnsImage } from './KenBurnsImage';
 import { Subtitle } from './Subtitle';
 
+
 type SceneProps = {
   shot: Shot;
+  globalFrameOffset: number;
   enableKenBurns: boolean;
   kenBurnsType: KenBurnsType;
   zoomRatio: number;
@@ -14,10 +16,13 @@ type SceneProps = {
   subtitlePosition: SubtitlePosition;
   subtitleFontSize: number;
   subtitleStrokeWidth: number;
+  subtitleColor: string;
+  highlightSfxUrl?: string;
 };
 
 export const Scene: React.FC<SceneProps> = ({
   shot,
+  globalFrameOffset,
   enableKenBurns,
   kenBurnsType,
   zoomRatio,
@@ -26,6 +31,8 @@ export const Scene: React.FC<SceneProps> = ({
   subtitlePosition,
   subtitleFontSize,
   subtitleStrokeWidth,
+  subtitleColor,
+  highlightSfxUrl,
 }) => {
   return (
     <AbsoluteFill>
@@ -41,9 +48,13 @@ export const Scene: React.FC<SceneProps> = ({
       {enableSubtitle && (
         <Subtitle
           text={shot.scriptText}
+          durationInFrames={shot.durationInFrames}
+          globalFrameOffset={globalFrameOffset}
           position={subtitlePosition}
           fontSize={subtitleFontSize}
           strokeWidth={subtitleStrokeWidth}
+          color={subtitleColor}
+          subtitleTimestamps={shot.subtitleTimestamps}
         />
       )}
 
