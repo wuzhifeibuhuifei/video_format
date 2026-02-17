@@ -1,0 +1,41 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Temporary compiled files with suffix
+*.pyc.*
+
+# Generated assets (images, audio, videos)
+assets/
+
+# Generated video outputs
+outputs/
+
+# Node.js dependencies
+node_modules/
+frontend/node_modules/
+remotion-video/node_modules/
+remotion-video/server/node_modules/
+config.toml
+config.override.json
+_tmp_patch.diff
+test.tmp
+remotion-video/server/_tmp_patch.diff
+remotion-video/server/test.tmp
+
+# Database
+data/
+
+# Logs
+logs/
+
+# Test files
+test_output.mp3
+

@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python main.py:*)",
+      "Bash(python -m pip show:*)",
+      "Bash(python:*)",
+      "Bash(cd:*)",
+      "Bash(dir:*)",
+      "Bash(claude mcp add context7 -- cmd /c \"npx -y @upstash/context7-mcp --api-key=ctx7sk-d3e2f202-596e-41fe-b93f-4ef02d3a000e\")",
+      "Bash(claude mcp list:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Add video composition tool with CLI theme options\n\nThis project is a Python video composition tool that generates MP4 videos from:\n- Narration audio files\n- Scene-by-scene scripts \\(分镜脚本\\)\n- Scene images \\(one per script line\\)\n\nKey features:\n- Aliyun ASR for word-level timestamp extraction\n- AI semantic matching \\(Volcengine/DeepSeek\\) for script alignment\n- MoviePy video composition\n- CLI theme/style options \\(--theme, --style, --image-style\\)\n- Configurable scene count and auto-confirm\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git config:*)",
+      "Bash(uv sync)",
+      "Bash(git push:*)",
+      "Bash(npm install:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRegenerate audio for project 41 shots 9-13 using MiniMax TTS API\n\nAdded audio files for shots 9-13 with updated voice synthesis. Also added regenerate_audio.js utility script for batch audio regeneration.\n\nCo-Authored-By: Claude \\(GLM-4.7\\) <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(start:*)",
+      "Bash(powershell -Command \"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri ''https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'' -OutFile ''C:\\\\ffmpeg\\\\ffmpeg.zip''\")",
+      "Bash(test:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api:*)",
+      "Bash(curl:*)",
+      "Bash(powershell:*)"
+    ]
+  }
+}
