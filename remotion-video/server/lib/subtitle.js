@@ -446,7 +446,7 @@ export async function burnSubtitlesWithHighlights(
 
     if (sfxLabels.length > 0) {
       audioFilters.push(
-        `[0:a]${sfxLabels.join('')}amix=inputs=${sfxLabels.length + 1}:duration=first:dropout_transition=0[aout]`
+        `[0:a]${sfxLabels.join('')}amix=inputs=${sfxLabels.length + 1}:duration=first:dropout_transition=0:normalize=0[aout]`
       );
 
       const filterComplex = `[0:v]${vf}[vout];${audioFilters.join(';')}`;

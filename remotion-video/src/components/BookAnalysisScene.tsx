@@ -10,7 +10,6 @@ import {
 import type { Shot, KenBurnsType, SubtitlePosition } from '../types';
 import { KenBurnsImage } from './KenBurnsImage';
 import { Subtitle } from './Subtitle';
-import { HighlightText } from './HighlightText';
 
 
 type BookAnalysisSceneProps = {
@@ -120,17 +119,6 @@ export const BookAnalysisScene: React.FC<BookAnalysisSceneProps> = ({
           strokeWidth={subtitleStrokeWidth}
           color={subtitleColor}
           subtitleTimestamps={shot.subtitleTimestamps}
-        />
-      )}
-
-      {/* 重点标注文字（弹出动画 + 音效） */}
-      {shot.highlightText && hasScriptText && (
-        <HighlightText
-          text={shot.highlightText}
-          scriptText={shot.scriptText!}
-          durationInFrames={shot.durationInFrames}
-          globalFrameOffset={globalFrameOffset}
-          sfxUrl={shot.highlightSfxUrl || highlightSfxUrl}
         />
       )}
 
