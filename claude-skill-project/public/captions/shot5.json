@@ -1,0 +1,597 @@
+[
+  {
+    "text": "生活",
+    "startMs": 280,
+    "endMs": 530,
+    "timestampMs": 500,
+    "confidence": 0.95
+  },
+  {
+    "text": "看起来",
+    "startMs": 530,
+    "endMs": 1140,
+    "timestampMs": 940,
+    "confidence": 0.95
+  },
+  {
+    "text": "很",
+    "startMs": 1140,
+    "endMs": 1500,
+    "timestampMs": 1400,
+    "confidence": 0.95
+  },
+  {
+    "text": "顺",
+    "startMs": 1500,
+    "endMs": 1990,
+    "timestampMs": 1800,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 1990,
+    "endMs": 2290,
+    "timestampMs": 2100,
+    "confidence": 0.95
+  },
+  {
+    "text": "节奏",
+    "startMs": 2290,
+    "endMs": 2820,
+    "timestampMs": 2580,
+    "confidence": 0.95
+  },
+  {
+    "text": "固定",
+    "startMs": 2820,
+    "endMs": 3540,
+    "timestampMs": 3080,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 3540,
+    "endMs": 4000,
+    "timestampMs": 3700,
+    "confidence": 0.95
+  },
+  {
+    "text": "风险",
+    "startMs": 4000,
+    "endMs": 4890,
+    "timestampMs": 4400,
+    "confidence": 0.95
+  },
+  {
+    "text": "很",
+    "startMs": 4890,
+    "endMs": 5430,
+    "timestampMs": 5100,
+    "confidence": 0.95
+  },
+  {
+    "text": "小",
+    "startMs": 5430,
+    "endMs": 6000,
+    "timestampMs": 5700,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 6000,
+    "endMs": 6050,
+    "timestampMs": 6020,
+    "confidence": 0.95
+  },
+  {
+    "text": "一点",
+    "startMs": 6050,
+    "endMs": 6690,
+    "timestampMs": 6400,
+    "confidence": 0.95
+  },
+  {
+    "text": "波动",
+    "startMs": 6690,
+    "endMs": 7270,
+    "timestampMs": 7000,
+    "confidence": 0.95
+  },
+  {
+    "text": "就",
+    "startMs": 7270,
+    "endMs": 7500,
+    "timestampMs": 7400,
+    "confidence": 0.95
+  },
+  {
+    "text": "让",
+    "startMs": 7500,
+    "endMs": 7750,
+    "timestampMs": 7600,
+    "confidence": 0.95
+  },
+  {
+    "text": "人",
+    "startMs": 7750,
+    "endMs": 7900,
+    "timestampMs": 7800,
+    "confidence": 0.95
+  },
+  {
+    "text": "慌",
+    "startMs": 7900,
+    "endMs": 8000,
+    "timestampMs": 7950,
+    "confidence": 0.95
+  },
+  {
+    "text": "。",
+    "startMs": 8000,
+    "endMs": 8280,
+    "timestampMs": 8100,
+    "confidence": 0.95
+  },
+  {
+    "text": "那",
+    "startMs": 8280,
+    "endMs": 8600,
+    "timestampMs": 8400,
+    "confidence": 0.95
+  },
+  {
+    "text": "一刻",
+    "startMs": 8600,
+    "endMs": 9690,
+    "timestampMs": 9100,
+    "confidence": 0.95
+  },
+  {
+    "text": "我",
+    "startMs": 9690,
+    "endMs": 9990,
+    "timestampMs": 9800,
+    "confidence": 0.95
+  },
+  {
+    "text": "才",
+    "startMs": 9990,
+    "endMs": 10200,
+    "timestampMs": 10100,
+    "confidence": 0.95
+  },
+  {
+    "text": "明白",
+    "startMs": 10200,
+    "endMs": 10600,
+    "timestampMs": 10400,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 10600,
+    "endMs": 10800,
+    "timestampMs": 10700,
+    "confidence": 0.95
+  },
+  {
+    "text": "问题",
+    "startMs": 10800,
+    "endMs": 11100,
+    "timestampMs": 10950,
+    "confidence": 0.95
+  },
+  {
+    "text": "不在",
+    "startMs": 11100,
+    "endMs": 11450,
+    "timestampMs": 11300,
+    "confidence": 0.95
+  },
+  {
+    "text": "变化",
+    "startMs": 11450,
+    "endMs": 11800,
+    "timestampMs": 11600,
+    "confidence": 0.95
+  },
+  {
+    "text": "太多",
+    "startMs": 11800,
+    "endMs": 12200,
+    "timestampMs": 12000,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 12200,
+    "endMs": 12400,
+    "timestampMs": 12300,
+    "confidence": 0.95
+  },
+  {
+    "text": "而在",
+    "startMs": 12400,
+    "endMs": 12990,
+    "timestampMs": 12700,
+    "confidence": 0.95
+  },
+  {
+    "text": "你",
+    "startMs": 12990,
+    "endMs": 13320,
+    "timestampMs": 13100,
+    "confidence": 0.95
+  },
+  {
+    "text": "太",
+    "startMs": 13320,
+    "endMs": 13700,
+    "timestampMs": 13500,
+    "confidence": 0.95
+  },
+  {
+    "text": "怕",
+    "startMs": 13700,
+    "endMs": 14000,
+    "timestampMs": 13850,
+    "confidence": 0.95
+  },
+  {
+    "text": "变化",
+    "startMs": 14000,
+    "endMs": 14500,
+    "timestampMs": 14250,
+    "confidence": 0.95
+  },
+  {
+    "text": "。",
+    "startMs": 14500,
+    "endMs": 15000,
+    "timestampMs": 14750,
+    "confidence": 0.95
+  },
+  {
+    "text": "反脆弱",
+    "startMs": 15000,
+    "endMs": 15800,
+    "timestampMs": 15400,
+    "confidence": 0.95
+  },
+  {
+    "text": "里",
+    "startMs": 15800,
+    "endMs": 16000,
+    "timestampMs": 15900,
+    "confidence": 0.95
+  },
+  {
+    "text": "有",
+    "startMs": 16000,
+    "endMs": 16200,
+    "timestampMs": 16100,
+    "confidence": 0.95
+  },
+  {
+    "text": "一句话",
+    "startMs": 16200,
+    "endMs": 16800,
+    "timestampMs": 16500,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 16800,
+    "endMs": 17000,
+    "timestampMs": 16900,
+    "confidence": 0.95
+  },
+  {
+    "text": "有些",
+    "startMs": 17000,
+    "endMs": 17260,
+    "timestampMs": 17130,
+    "confidence": 0.95
+  },
+  {
+    "text": "东西",
+    "startMs": 17260,
+    "endMs": 17600,
+    "timestampMs": 17430,
+    "confidence": 0.95
+  },
+  {
+    "text": "必须",
+    "startMs": 17600,
+    "endMs": 18000,
+    "timestampMs": 17800,
+    "confidence": 0.95
+  },
+  {
+    "text": "在",
+    "startMs": 18000,
+    "endMs": 18200,
+    "timestampMs": 18100,
+    "confidence": 0.95
+  },
+  {
+    "text": "冲击",
+    "startMs": 18200,
+    "endMs": 18700,
+    "timestampMs": 18450,
+    "confidence": 0.95
+  },
+  {
+    "text": "中",
+    "startMs": 18700,
+    "endMs": 18920,
+    "timestampMs": 18800,
+    "confidence": 0.95
+  },
+  {
+    "text": "变强",
+    "startMs": 18920,
+    "endMs": 19580,
+    "timestampMs": 19250,
+    "confidence": 0.95
+  },
+  {
+    "text": "。",
+    "startMs": 19580,
+    "endMs": 20000,
+    "timestampMs": 19800,
+    "confidence": 0.95
+  },
+  {
+    "text": "你",
+    "startMs": 20000,
+    "endMs": 20380,
+    "timestampMs": 20200,
+    "confidence": 0.95
+  },
+  {
+    "text": "一味",
+    "startMs": 20380,
+    "endMs": 20960,
+    "timestampMs": 20670,
+    "confidence": 0.95
+  },
+  {
+    "text": "避险",
+    "startMs": 20960,
+    "endMs": 21500,
+    "timestampMs": 21200,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 21500,
+    "endMs": 21700,
+    "timestampMs": 21600,
+    "confidence": 0.95
+  },
+  {
+    "text": "短期",
+    "startMs": 21700,
+    "endMs": 22000,
+    "timestampMs": 21850,
+    "confidence": 0.95
+  },
+  {
+    "text": "很",
+    "startMs": 22000,
+    "endMs": 22120,
+    "timestampMs": 22060,
+    "confidence": 0.95
+  },
+  {
+    "text": "稳",
+    "startMs": 22120,
+    "endMs": 22390,
+    "timestampMs": 22250,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 22390,
+    "endMs": 22630,
+    "timestampMs": 22500,
+    "confidence": 0.95
+  },
+  {
+    "text": "长期",
+    "startMs": 22630,
+    "endMs": 22910,
+    "timestampMs": 22770,
+    "confidence": 0.95
+  },
+  {
+    "text": "却",
+    "startMs": 22910,
+    "endMs": 23060,
+    "timestampMs": 22980,
+    "confidence": 0.95
+  },
+  {
+    "text": "越来越",
+    "startMs": 23060,
+    "endMs": 23540,
+    "timestampMs": 23300,
+    "confidence": 0.95
+  },
+  {
+    "text": "脆",
+    "startMs": 23540,
+    "endMs": 23860,
+    "timestampMs": 23700,
+    "confidence": 0.95
+  },
+  {
+    "text": "。",
+    "startMs": 23860,
+    "endMs": 24200,
+    "timestampMs": 24000,
+    "confidence": 0.95
+  },
+  {
+    "text": "真正的",
+    "startMs": 24200,
+    "endMs": 25070,
+    "timestampMs": 24600,
+    "confidence": 0.95
+  },
+  {
+    "text": "危险",
+    "startMs": 25070,
+    "endMs": 26000,
+    "timestampMs": 25500,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 26000,
+    "endMs": 26170,
+    "timestampMs": 26080,
+    "confidence": 0.95
+  },
+  {
+    "text": "往往",
+    "startMs": 26170,
+    "endMs": 26600,
+    "timestampMs": 26400,
+    "confidence": 0.95
+  },
+  {
+    "text": "藏在",
+    "startMs": 26600,
+    "endMs": 27290,
+    "timestampMs": 26950,
+    "confidence": 0.95
+  },
+  {
+    "text": "看起来",
+    "startMs": 27290,
+    "endMs": 27800,
+    "timestampMs": 27550,
+    "confidence": 0.95
+  },
+  {
+    "text": "没事",
+    "startMs": 27800,
+    "endMs": 28000,
+    "timestampMs": 27900,
+    "confidence": 0.95
+  },
+  {
+    "text": "的",
+    "startMs": 28000,
+    "endMs": 28120,
+    "timestampMs": 28060,
+    "confidence": 0.95
+  },
+  {
+    "text": "阶段",
+    "startMs": 28120,
+    "endMs": 28660,
+    "timestampMs": 28400,
+    "confidence": 0.95
+  },
+  {
+    "text": "。",
+    "startMs": 28660,
+    "endMs": 29010,
+    "timestampMs": 28800,
+    "confidence": 0.95
+  },
+  {
+    "text": "记住",
+    "startMs": 29010,
+    "endMs": 29540,
+    "timestampMs": 29280,
+    "confidence": 0.95
+  },
+  {
+    "text": "这条",
+    "startMs": 29540,
+    "endMs": 29930,
+    "timestampMs": 29740,
+    "confidence": 0.95
+  },
+  {
+    "text": "规律",
+    "startMs": 29930,
+    "endMs": 30240,
+    "timestampMs": 30080,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 30240,
+    "endMs": 30410,
+    "timestampMs": 30320,
+    "confidence": 0.95
+  },
+  {
+    "text": "经不起",
+    "startMs": 30410,
+    "endMs": 30700,
+    "timestampMs": 30550,
+    "confidence": 0.95
+  },
+  {
+    "text": "波动",
+    "startMs": 30700,
+    "endMs": 30910,
+    "timestampMs": 30800,
+    "confidence": 0.95
+  },
+  {
+    "text": "的",
+    "startMs": 30910,
+    "endMs": 31010,
+    "timestampMs": 30960,
+    "confidence": 0.95
+  },
+  {
+    "text": "稳定",
+    "startMs": 31010,
+    "endMs": 31290,
+    "timestampMs": 31150,
+    "confidence": 0.95
+  },
+  {
+    "text": "，",
+    "startMs": 31290,
+    "endMs": 31510,
+    "timestampMs": 31400,
+    "confidence": 0.95
+  },
+  {
+    "text": "本身",
+    "startMs": 31510,
+    "endMs": 31840,
+    "timestampMs": 31680,
+    "confidence": 0.95
+  },
+  {
+    "text": "就是",
+    "startMs": 31840,
+    "endMs": 32080,
+    "timestampMs": 31960,
+    "confidence": 0.95
+  },
+  {
+    "text": "风险",
+    "startMs": 32080,
+    "endMs": 32480,
+    "timestampMs": 32280,
+    "confidence": 0.95
+  },
+  {
+    "text": "。",
+    "startMs": 32480,
+    "endMs": 32700,
+    "timestampMs": 32600,
+    "confidence": 0.95
+  }
+]

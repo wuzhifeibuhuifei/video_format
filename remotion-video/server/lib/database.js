@@ -60,6 +60,20 @@ export class ProjectDatabase {
       )
     `);
 
+    // 资产空间表
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS assets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        type TEXT NOT NULL,
+        category TEXT DEFAULT '',
+        size INTEGER DEFAULT 0,
+        source TEXT DEFAULT 'upload',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // 画面风格表
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS image_styles (
@@ -255,6 +269,49 @@ export class ProjectDatabase {
 
   getDefaultImageStyle() {
     return this.db.prepare('SELECT * FROM image_styles WHERE is_default = 1').get();
+  }
+
+  // 资产空间操作
+  createAsset(data) {
+    const stmt = this.db.prepare(`
+      INSERT INTO assets (name, file_path, type, category, size, source)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      data.name, data.file_path, data.type,
+      data.category || '', data.size || 0, data.source || 'upload'
+    );
+    return result.lastInsertRowid;
+  }
+
+  listAssets({ type, category, sort = 'created_at', order = 'DESC' } = {}) {
+    let sql = 'SELECT * FROM assets WHERE 1=1';
+    const params = [];
+    if (type) { sql += ' AND type = ?'; params.push(type); }
+    if (category) { sql += ' AND category = ?'; params.push(category); }
+    const allowed = ['created_at', 'name', 'size'];
+    const col = allowed.includes(sort) ? sort : 'created_at';
+    sql += ` ORDER BY ${col} ${order === 'ASC' ? 'ASC' : 'DESC'}`;
+    return this.db.prepare(sql).all(...params);
+  }
+
+  getAsset(id) {
+    return this.db.prepare('SELECT * FROM assets WHERE id = ?').get(id);
+  }
+
+  renameAsset(id, name) {
+    const dup = this.db.prepare('SELECT id FROM assets WHERE name = ? AND id != ?').get(name, id);
+    if (dup) throw new Error('资产名称已存在');
+    this.db.prepare('UPDATE assets SET name = ? WHERE id = ?').run(name, id);
+  }
+
+  deleteAsset(id) {
+    this.db.prepare('DELETE FROM assets WHERE id = ?').run(id);
+  }
+
+  listAssetCategories() {
+    const rows = this.db.prepare("SELECT DISTINCT category FROM assets WHERE category != '' ORDER BY category").all();
+    return rows.map(r => r.category);
   }
 
   close() {

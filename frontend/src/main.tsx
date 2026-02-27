@@ -7,6 +7,10 @@ import { ProjectDetail } from './pages/ProjectDetail';
 import { VideoCreator } from './pages/VideoCreator';
 import { ImageStylesPage } from './pages/ImageStylesPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ImageOverlayPage } from './pages/ImageOverlayPage';
+import { BookRevealPage } from './pages/BookRevealPage';
+import { BookCardPage } from './pages/BookCardPage';
+import { AssetSpacePage } from './pages/AssetSpacePage';
 import { LoginPage } from './pages/LoginPage';
 import { isAuthenticated } from './api/client';
 import './index.css';
@@ -36,6 +40,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="project/:projectId" element={<ProjectDetail />} />
           <Route path="project/:projectId/video/:shotId" element={<VideoCreator />} />
           <Route path="image-styles" element={<ImageStylesPage />} />
+          <Route path="image-overlay" element={<ImageOverlayPage />} />
+          <Route path="book-reveal" element={<BookRevealPage />} />
+          <Route path="book-card" element={<BookCardPage />} />
+          <Route path="asset-space" element={<AssetSpacePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

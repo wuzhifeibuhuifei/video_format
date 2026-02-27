@@ -1,0 +1,72 @@
+[
+  {
+    "text": "你",
+    "startMs": 170,
+    "endMs": 190,
+    "timestampMs": 340,
+    "confidence": 0.97
+  },
+  {
+    "text": "确",
+    "startMs": 190,
+    "endMs": 280,
+    "timestampMs": 460,
+    "confidence": 0.97
+  },
+  {
+    "text": "定",
+    "startMs": 280,
+    "endMs": 510,
+    "timestampMs": 660,
+    "confidence": 0.99
+  },
+  {
+    "text": "现在",
+    "startMs": 510,
+    "endMs": 840,
+    "timestampMs": 1000,
+    "confidence": 0.99
+  },
+  {
+    "text": "的",
+    "startMs": 840,
+    "endMs": 1010,
+    "timestampMs": 1140,
+    "confidence": 0.99
+  },
+  {
+    "text": "稳",
+    "startMs": 1010,
+    "endMs": 1120,
+    "timestampMs": 1320,
+    "confidence": 0.99
+  },
+  {
+    "text": "定",
+    "startMs": 1120,
+    "endMs": 1360,
+    "timestampMs": 1420,
+    "confidence": 0.99
+  },
+  {
+    "text": "真的是",
+    "startMs": 1360,
+    "endMs": 1900,
+    "timestampMs": 1760,
+    "confidence": 0.97
+  },
+  {
+    "text": "好事",
+    "startMs": 1900,
+    "endMs": 2260,
+    "timestampMs": 2080,
+    "confidence": 0.95
+  },
+  {
+    "text": "吗",
+    "startMs": 2260,
+    "endMs": 2440,
+    "timestampMs": 2420,
+    "confidence": 0.99
+  }
+]

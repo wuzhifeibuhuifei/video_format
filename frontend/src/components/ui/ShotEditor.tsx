@@ -11,9 +11,9 @@ interface ShotEditorProps {
   onCreateVideo?: () => void;
   onDelete?: () => void;
   onDuplicate?: () => void;
-  onUploadBackground?: (file: File) => void;
+  onUploadBackground?: () => void;
   onDeleteBackground?: () => void;
-  onUploadHighlightSfx?: (file: File) => void;
+  onUploadHighlightSfx?: () => void;
   onDeleteHighlightSfx?: () => void;
   imageLoading?: boolean;
   uploading?: boolean;
@@ -32,8 +32,8 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
   const [imageLoadAttempted, setImageLoadAttempted] = useState(false); // 跟踪是否已尝试加载图片
   const [imageVersion, setImageVersion] = useState(Date.now()); // 用于强制刷新图片
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const bgFileInputRef = useRef<HTMLInputElement>(null);
-  const sfxFileInputRef = useRef<HTMLInputElement>(null);
+
+
   const [bgVersion, setBgVersion] = useState(Date.now());
 
   // 使用 useMemo 和 shot.image_path 作为依赖，添加缓存破坏参数
@@ -101,49 +101,6 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
     e.target.value = '';
   };
 
-  const handleBgFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && onUploadBackground) {
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm'];
-      if (!validTypes.some(t => file.type.startsWith(t.split('/')[0]))) {
-        alert('请选择图片或视频文件');
-        return;
-      }
-      if (file.size > 100 * 1024 * 1024) {
-        alert('文件大小不能超过 100MB');
-        return;
-      }
-      try {
-        await onUploadBackground(file);
-        setBgVersion(Date.now());
-      } catch (err) {
-        console.error('Background upload failed:', err);
-      }
-    }
-    e.target.value = '';
-  };
-
-  const handleSfxFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && onUploadHighlightSfx) {
-      const validExts = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
-      const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-      if (!validExts.includes(ext)) {
-        alert('请选择音频文件（mp3/wav/ogg/m4a/aac）');
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        alert('音效文件大小不能超过 10MB');
-        return;
-      }
-      try {
-        await onUploadHighlightSfx(file);
-      } catch (err) {
-        console.error('Highlight sfx upload failed:', err);
-      }
-    }
-    e.target.value = '';
-  };
 
   const hasShotBackground = shot.background_path && shot.background_path.trim() !== '';
   const shotBgUrl = useMemo(() => {
@@ -298,7 +255,7 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
                           {shot.highlight_sfx_path.split('/').pop()}
                         </span>
                         <button
-                          onClick={() => sfxFileInputRef.current?.click()}
+                          onClick={() => onUploadHighlightSfx?.()}
                           disabled={highlightSfxUploading}
                           className="btn btn-ghost text-xs text-indigo-400 hover:text-indigo-300"
                         >
@@ -318,7 +275,7 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
                       <>
                         <span className="text-xs text-slate-500">使用系统默认音效</span>
                         <button
-                          onClick={() => sfxFileInputRef.current?.click()}
+                          onClick={() => onUploadHighlightSfx?.()}
                           disabled={highlightSfxUploading}
                           className="btn btn-ghost text-xs flex items-center gap-1 text-indigo-400 hover:text-indigo-300"
                         >
@@ -327,18 +284,11 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
                           ) : (
                             <IconUpload className="w-3 h-3" />
                           )}
-                          上传自定义音效
+                          选择自定义音效
                         </button>
                       </>
                     )}
                   </div>
-                  <input
-                    ref={sfxFileInputRef}
-                    type="file"
-                    accept=".mp3,.wav,.ogg,.m4a,.aac"
-                    onChange={handleSfxFileChange}
-                    className="hidden"
-                  />
                 </div>
               )}
             </div>
@@ -410,7 +360,7 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
                 )}
                 <div className="flex gap-1">
                   <button
-                    onClick={() => bgFileInputRef.current?.click()}
+                    onClick={() => { console.log('ShotEditor onUploadBackground clicked, shot.id:', shot.id, typeof shot.id); onUploadBackground?.(); }}
                     disabled={backgroundUploading}
                     className="btn btn-ghost text-xs flex items-center gap-1 text-indigo-400 hover:text-indigo-300"
                   >
@@ -419,7 +369,7 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
                     ) : (
                       <IconUpload className="w-3 h-3" />
                     )}
-                    {hasShotBackground ? '更换' : '上传背景'}
+                    {hasShotBackground ? '更换' : '选择背景'}
                   </button>
                   {hasShotBackground && onDeleteBackground && (
                     <button
@@ -432,13 +382,6 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
                   )}
                 </div>
               </div>
-              <input
-                ref={bgFileInputRef}
-                type="file"
-                accept="image/*,video/mp4,video/quicktime,video/webm"
-                onChange={handleBgFileChange}
-                className="hidden"
-              />
             </div>
           )}
         </div>

@@ -1,32 +1,32 @@
 [
 	{
-		"text": "生活看起来很顺， 节奏固定，风险很小，一点波动就让人慌。 那一刻我才明白，问题不在变化太多，而在你太怕变化。",
-		"pronounce_text": "生活看起来很顺，节奏固定，风险很小，一点波动就让人慌。那一刻我才明白，问题不在变化太多，而在你太怕变化。",
+		"text": "看书很多， 课程不少， 观念天天更新。 争论更有逻辑， 表达更流畅。 后来我才明白， 问题不在知识储备， 而在底层假设从未改变。",
+		"pronounce_text": "看书很多，课程不少，观念天天更新。争论更有逻辑，表达更流畅。后来我才明白，问题不在知识储备，而在底层假设从未改变。",
 		"time_begin": 0,
-		"time_end": 12055.6462585034,
+		"time_end": 12949.614512471655,
 		"text_begin": 0,
-		"text_end": 54,
+		"text_end": 64,
 		"pronounce_text_begin": 0,
-		"pronounce_text_end": 52
+		"pronounce_text_end": 57
 	},
 	{
-		"text": "反脆弱里有一句话，有些东西，必须在冲击中变强。",
-		"pronounce_text": "反脆弱里有一句话，有些东西，必须在冲击中变强。",
-		"time_begin": 12255.6462585034,
-		"time_end": 17182.766439909297,
-		"text_begin": 54,
-		"text_end": 77,
-		"pronounce_text_begin": 52,
-		"pronounce_text_end": 75
+		"text": "这类思维升级类书反复强调一句话，认知的牢笼来自默认前提。",
+		"pronounce_text": "这类思维升级类书反复强调一句话，认知的牢笼来自默认前提。",
+		"time_begin": 13149.614512471655,
+		"time_end": 20038.820861678003,
+		"text_begin": 64,
+		"text_end": 92,
+		"pronounce_text_begin": 57,
+		"pronounce_text_end": 85
 	},
 	{
-		"text": "你一味避险，短期很稳， 长期却越来越脆。真正的危险，往往藏在看起来没事的阶段。 记住这条规律，经不起波动的稳定， 本身就是风险。",
-		"pronounce_text": "你一味避险，短期很稳，长期却越来越脆。真正的危险，往往藏在看起来没事的阶段。记住这条规律，经不起波动的稳定，本身就是风险。",
-		"time_begin": 17352,
-		"time_end": 31323.292517006805,
-		"text_begin": 77,
-		"text_end": 141,
-		"pronounce_text_begin": 75,
-		"pronounce_text_end": 136
+		"text": "你讨论的是答案， 却从不怀疑问题本身。 记住这条规律，不拆前提的成长，只是认知装修。",
+		"pronounce_text": "你讨论的是答案，却从不怀疑问题本身。记住这条规律，不拆前提的成长，只是认知装修。",
+		"time_begin": 20196,
+		"time_end": 28919.58276643991,
+		"text_begin": 92,
+		"text_end": 134,
+		"pronounce_text_begin": 85,
+		"pronounce_text_end": 125
 	}
 ]

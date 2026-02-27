@@ -1,7 +1,11 @@
 import React from 'react';
 import { Composition, staticFile } from 'remotion';
 import { VideoComposition } from './VideoComposition';
-import type { VideoCompositionProps } from './types';
+import { ImageOverlayVideo } from './components/ImageOverlayVideo';
+import { BookReveal } from './components/BookReveal';
+import { BookCard } from './components/BookCard';
+import { BookCardVertical } from './components/BookCardVertical';
+import type { VideoCompositionProps, ImageOverlayVideoProps, BookRevealProps, BookCardProps } from './types';
 
 // 加载本地中文字体
 const fontFamily = 'Noto Sans SC';
@@ -47,9 +51,9 @@ const defaultProps: VideoCompositionProps = {
   panRange: 50,
   enableSubtitle: true,
   subtitlePosition: 'bottom',
-  subtitleFontSize: 42,
+  subtitleFontSize: 40,
   subtitleStrokeWidth: 6,
-  subtitleColor: '#e8f901',
+  subtitleColor: '#f6fa00',
   enableBgm: false,
   bgmUrl: undefined,
   bgmVolume: 0.2,
@@ -85,24 +89,120 @@ const calculateTotalDuration = (props: VideoCompositionProps): number => {
   return shotsDuration - transitionsCount * transitionFrames;
 };
 
+// ImageOverlayVideo 默认 Props
+const imageOverlayDefaultProps: ImageOverlayVideoProps = {
+  videoSrc: '',
+  imageSrc: '',
+  fps: 24,
+  width: 1920,
+  height: 1080,
+  durationInFrames: 240,
+  initialScale: 0.5,
+  finalScale: 1.0,
+  initialX: 80,
+  initialY: 30,
+  targetX: 50,
+  targetY: 50,
+  moveStartFrame: 24,
+  moveDurationFrames: 4,
+  scaleDurationFrames: 212,
+  imageWidth: 400,
+  imageHeight: 300,
+};
+
 export const RemotionRoot: React.FC = () => {
   return (
-    <Composition
-      id="VideoComposition"
-      component={VideoComposition}
-      durationInFrames={calculateTotalDuration(defaultProps)}
-      fps={defaultProps.fps}
-      width={defaultProps.width}
-      height={defaultProps.height}
-      defaultProps={defaultProps}
-      calculateMetadata={({ props }) => {
-        return {
-          durationInFrames: calculateTotalDuration(props),
+    <>
+      <Composition
+        id="VideoComposition"
+        component={VideoComposition}
+        durationInFrames={calculateTotalDuration(defaultProps)}
+        fps={defaultProps.fps}
+        width={defaultProps.width}
+        height={defaultProps.height}
+        defaultProps={defaultProps}
+        calculateMetadata={({ props }) => {
+          return {
+            durationInFrames: calculateTotalDuration(props),
+            fps: props.fps,
+            width: props.width,
+            height: props.height,
+          };
+        }}
+      />
+      <Composition
+        id="ImageOverlayVideo"
+        component={ImageOverlayVideo}
+        durationInFrames={imageOverlayDefaultProps.durationInFrames}
+        fps={imageOverlayDefaultProps.fps}
+        width={imageOverlayDefaultProps.width}
+        height={imageOverlayDefaultProps.height}
+        defaultProps={imageOverlayDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: props.durationInFrames,
           fps: props.fps,
           width: props.width,
           height: props.height,
-        };
-      }}
-    />
+        })}
+      />
+      <Composition
+        id="BookReveal"
+        component={BookReveal}
+        durationInFrames={64}
+        fps={30}
+        width={1280}
+        height={720}
+        defaultProps={{
+          videoSrc: '',
+          imageSrc: '',
+          fps: 30,
+          width: 1280,
+          height: 720,
+          durationInFrames: 64,
+        } as BookRevealProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: props.durationInFrames,
+          fps: props.fps,
+          width: props.width,
+          height: props.height,
+        })}
+      />
+      <Composition
+        id="BookCard"
+        component={BookCard}
+        durationInFrames={1}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{
+          imageSrc: '',
+          backgroundSrc: undefined,
+          bookName: '示例书名',
+          subtitle: '',
+          fps: 30,
+          width: 1920,
+          height: 1080,
+          durationInFrames: 1,
+        } as BookCardProps}
+      />
+      <Composition
+        id="BookCardVertical"
+        component={BookCardVertical}
+        durationInFrames={1}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          imageSrc: '',
+          backgroundSrc: undefined,
+          bookName: '示例书名',
+          subtitle: '',
+          fps: 30,
+          width: 1080,
+          height: 1920,
+          durationInFrames: 1,
+        } as BookCardProps}
+      />
+    </>
   );
 };

@@ -28,7 +28,7 @@ process.env.PATH = isLinux ? `${bundledFfmpegDir}:${process.env.PATH || ''}` : `
 
 import { Router } from 'express';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, selectComposition, getVideoMetadata } from '@remotion/renderer';
+import { renderMedia, renderStill, selectComposition, getVideoMetadata } from '@remotion/renderer';
 import { TTSClient } from '../lib/tts.js';
 import { VideoGenerator } from '../lib/video.js';
 import { VideoPromptGenerator } from '../lib/videoPrompt.js';
@@ -410,8 +410,8 @@ async function processRender(projectId, taskId) {
       const burnOutputAbsolute = path.resolve(burnOutputRelative);
 
       const burnOptions = {
-        fontSize: projectConfig.subtitle_font_size || 46,
-        fontColor: projectConfig.subtitle_color || '#FFFFFF',
+        fontSize: projectConfig.subtitle_font_size || 40,
+        fontColor: projectConfig.subtitle_color || '#f6fa00',
         position: 'bottom',
         margin: 30,
       };
@@ -748,9 +748,9 @@ async function buildRemotionProps(shots, fps, project, videoEffects, audioEffect
     panRange: videoEffects.pan_x_range || 50,
     enableSubtitle: enableSubtitle,
     subtitlePosition: 'bottom',
-    subtitleFontSize: projectConfig.subtitle_font_size || 46,
+    subtitleFontSize: projectConfig.subtitle_font_size || 40,
     subtitleStrokeWidth: 6,
-    subtitleColor: projectConfig.subtitle_color || '#FFFFFF',
+    subtitleColor: projectConfig.subtitle_color || '#f6fa00',
     enableBgm: enableBgm,
     bgmUrl: audioEffects.bgm_path ? `${serverUrl}/${audioEffects.bgm_path.replace(/\\/g, '/')}` : '',
     bgmVolume: bgmVolume,
@@ -1145,8 +1145,8 @@ async function processGenerateAndBurnSubtitles(projectId, taskId, options = {}) 
     const projectConfig = project.config || {};
 
     const burnOptions = {
-      fontSize: options.fontSize || projectConfig.subtitle_font_size || 46,
-      fontColor: options.fontColor || projectConfig.subtitle_color || '#FFFFFF',
+      fontSize: options.fontSize || projectConfig.subtitle_font_size || 40,
+      fontColor: options.fontColor || projectConfig.subtitle_color || '#f6fa00',
       position: options.position || 'bottom',
       margin: 30,
     };
@@ -1220,8 +1220,8 @@ router.post('/:projectId/burn-subtitles', async (req, res) => {
     const projectConfig = project.config || {};
 
     const options = {
-      fontSize: fontSize || projectConfig.subtitle_font_size || 46,
-      fontColor: fontColor || projectConfig.subtitle_color || '#FFFFFF',
+      fontSize: fontSize || projectConfig.subtitle_font_size || 40,
+      fontColor: fontColor || projectConfig.subtitle_color || '#f6fa00',
       position: position || 'bottom',
       margin: 30,
     };
@@ -1257,6 +1257,290 @@ router.post('/:projectId/burn-subtitles', async (req, res) => {
     });
   } catch (err) {
     console.error(`[burn-subtitles] 失败:`, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ========== 图片叠加视频渲染 API ==========
+router.post('/image-overlay/render', async (req, res) => {
+  try {
+    const {
+      videoSrc,
+      imageSrc,
+      fps = 24,
+      width = 1920,
+      height = 1080,
+      durationInFrames = 240,
+      initialScale = 0.5,
+      finalScale = 1.0,
+      initialX = 80,
+      initialY = 30,
+      targetX = 50,
+      targetY = 50,
+      moveStartFrame = 0,
+      moveDurationFrames = 60,
+      scaleDurationFrames = 40,
+      imageWidth = 400,
+      imageHeight = 300,
+      outputFileName,
+    } = req.body;
+
+    if (!videoSrc || !imageSrc) {
+      return res.status(400).json({ error: 'videoSrc 和 imageSrc 为必填项' });
+    }
+
+    // 转换本地路径为 HTTP URL（通过 Express 静态服务）
+    const serverUrl = resolveServerUrl();
+    const toHttpUrl = (p) => {
+      const abs = path.isAbsolute(p) ? p : path.resolve(workspaceRoot, p);
+      const normalized = abs.replace(/\\/g, '/');
+      const wsRoot = workspaceRoot.replace(/\\/g, '/');
+      // 如果路径在 workspaceRoot 下，转为相对路径
+      if (normalized.startsWith(wsRoot)) {
+        const relative = normalized.slice(wsRoot.length + 1);
+        return `${serverUrl}/${relative}`;
+      }
+      return `${serverUrl}/${normalized}`;
+    };
+
+    const props = {
+      videoSrc: toHttpUrl(videoSrc),
+      imageSrc: toHttpUrl(imageSrc),
+      fps, width, height, durationInFrames,
+      initialScale, finalScale,
+      initialX, initialY, targetX, targetY,
+      moveStartFrame, moveDurationFrames, scaleDurationFrames,
+      imageWidth, imageHeight,
+    };
+
+    const outputDir = path.resolve(workspaceRoot, 'outputs');
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    const outputPath = path.join(outputDir, outputFileName || `overlay_${Date.now()}.mp4`);
+
+    console.log('[image-overlay] 开始渲染...');
+
+    const remotionProjectDir = process.env.REMOTION_PROJECT_DIR;
+    const entryPoint = remotionProjectDir
+      ? path.join(remotionProjectDir, 'src/index.ts')
+      : path.join(__dirname, '../../src/index.ts');
+
+    const bundled = await bundle({ entryPoint, webpackOverride: (c) => c });
+
+    const composition = await selectComposition({
+      serveUrl: bundled,
+      id: 'ImageOverlayVideo',
+      inputProps: props,
+      browserExecutable: bundledChromeExecutable,
+      timeoutInMilliseconds: 120000,
+    });
+
+    await renderMedia({
+      composition,
+      serveUrl: bundled,
+      codec: 'h264',
+      outputLocation: outputPath,
+      inputProps: props,
+      browserExecutable: bundledChromeExecutable,
+      timeoutInMilliseconds: 300000,
+      onProgress: ({ progress }) => {
+        console.log(`[image-overlay] 渲染进度: ${(progress * 100).toFixed(1)}%`);
+      },
+    });
+
+    console.log(`[image-overlay] 渲染完成: ${outputPath}`);
+    res.json({ success: true, outputPath });
+  } catch (err) {
+    console.error('[image-overlay] 渲染失败:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ========== 书籍揭示视频 API ==========
+const bookRevealDir = path.resolve(workspaceRoot, 'assets/book-reveal');
+
+router.post('/book-reveal/upload-cover', async (req, res) => {
+  try {
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({ error: '未上传图片' });
+    }
+    if (!fs.existsSync(bookRevealDir)) fs.mkdirSync(bookRevealDir, { recursive: true });
+    const file = req.files.image;
+    const ext = path.extname(file.name) || '.png';
+    const fileName = `cover_${Date.now()}${ext}`;
+    const filePath = path.join(bookRevealDir, fileName);
+    await file.mv(filePath);
+    const relativePath = `assets/book-reveal/${fileName}`;
+    res.json({ success: true, path: relativePath });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/book-reveal/generate-cover', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: '缺少 prompt' });
+    if (!fs.existsSync(bookRevealDir)) fs.mkdirSync(bookRevealDir, { recursive: true });
+    const { ImageGenerator } = await import('../lib/image.js');
+    const generator = new ImageGenerator();
+    const fileName = `cover_ai_${Date.now()}.png`;
+    const filePath = path.join(bookRevealDir, fileName);
+    await generator.generate(prompt, filePath, { width: 1440, height: 2560 });
+    const relativePath = `assets/book-reveal/${fileName}`;
+    res.json({ success: true, path: relativePath });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const bookRevealJobs = new Map();
+
+router.post('/book-reveal/render', async (req, res) => {
+  try {
+    const { coverPath } = req.body;
+    if (!coverPath) return res.status(400).json({ error: '缺少封面图路径' });
+
+    const taskId = `book-reveal-${Date.now()}`;
+    bookRevealJobs.set(taskId, { stage: 'rendering', percent: 0, message: '开始渲染...' });
+
+    res.json({ taskId });
+
+    // 异步渲染
+    (async () => {
+      try {
+        const serverUrl = resolveServerUrl();
+        const absPath = path.isAbsolute(coverPath) ? coverPath : path.resolve(workspaceRoot, coverPath);
+        const wsRoot = workspaceRoot.replace(/\\/g, '/');
+        const normalized = absPath.replace(/\\/g, '/');
+        const relative = normalized.startsWith(wsRoot) ? normalized.slice(wsRoot.length + 1) : normalized;
+        const imageSrc = `${serverUrl}/${relative}`;
+        const videoSrc = `${serverUrl}/background-video/flip-animation.mp4`;
+
+        const props = { videoSrc, imageSrc, fps: 30, width: 1280, height: 720, durationInFrames: 64 };
+
+        const entryPoint = process.env.REMOTION_PROJECT_DIR
+          ? path.join(process.env.REMOTION_PROJECT_DIR, 'src/index.ts')
+          : path.join(__dirname, '../../src/index.ts');
+
+        bookRevealJobs.set(taskId, { stage: 'bundling', percent: 10, message: '打包中...' });
+        const bundled = await bundle({ entryPoint, webpackOverride: (c) => c });
+
+        bookRevealJobs.set(taskId, { stage: 'rendering', percent: 30, message: '渲染中...' });
+        const composition = await selectComposition({
+          serveUrl: bundled, id: 'BookReveal', inputProps: props,
+          browserExecutable: bundledChromeExecutable, timeoutInMilliseconds: 120000,
+        });
+
+        const outputDir = path.resolve(workspaceRoot, 'outputs');
+        if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+        const outputFileName = `book_reveal_${Date.now()}.mp4`;
+        const outputPath = path.join(outputDir, outputFileName);
+
+        await renderMedia({
+          composition, serveUrl: bundled, codec: 'h264',
+          outputLocation: outputPath, inputProps: props,
+          browserExecutable: bundledChromeExecutable, timeoutInMilliseconds: 300000,
+          onProgress: ({ progress }) => {
+            const percent = 30 + Math.round(progress * 70);
+            bookRevealJobs.set(taskId, { stage: 'rendering', percent, message: `渲染中 ${(progress * 100).toFixed(0)}%` });
+          },
+        });
+
+        const outputRelPath = `outputs/${outputFileName}`;
+        bookRevealJobs.set(taskId, { stage: 'done', percent: 100, message: '完成', outputPath: outputRelPath });
+        try {
+          db.createAsset({ name: outputFileName, file_path: outputRelPath, type: 'video', size: fs.statSync(outputPath).size, source: 'book-reveal' });
+        } catch (e) { console.error('[book-reveal] 保存到资产空间失败:', e.message); }
+      } catch (err) {
+        console.error('[book-reveal] 渲染失败:', err);
+        bookRevealJobs.set(taskId, { stage: 'error', percent: 0, message: err.message });
+      }
+    })();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/book-reveal/progress/:taskId', (req, res) => {
+  const job = bookRevealJobs.get(req.params.taskId);
+  if (!job) return res.status(404).json({ error: '任务不存在' });
+  res.json(job);
+});
+
+// ========== 书籍卡片渲染 API ==========
+router.post('/book-card/render', async (req, res) => {
+  try {
+    const { coverPath, bookName, subtitle, backgroundPath } = req.body;
+    if (!coverPath || !bookName) {
+      return res.status(400).json({ error: '缺少封面图路径或书名' });
+    }
+
+    const serverUrl = resolveServerUrl();
+    const wsRoot = workspaceRoot.replace(/\\/g, '/');
+    const toUrl = (p) => {
+      const abs = path.isAbsolute(p) ? p : path.resolve(workspaceRoot, p);
+      const norm = abs.replace(/\\/g, '/');
+      const rel = norm.startsWith(wsRoot) ? norm.slice(wsRoot.length + 1) : norm;
+      return `${serverUrl}/${rel}`;
+    };
+
+    const props = {
+      imageSrc: toUrl(coverPath), bookName, subtitle: subtitle || '',
+      backgroundSrc: backgroundPath ? toUrl(backgroundPath) : undefined,
+      fps: 30, width: 1920, height: 1080, durationInFrames: 1,
+    };
+
+    const entryPoint = process.env.REMOTION_PROJECT_DIR
+      ? path.join(process.env.REMOTION_PROJECT_DIR, 'src/index.ts')
+      : path.join(__dirname, '../../src/index.ts');
+
+    const bundled = await bundle({ entryPoint, webpackOverride: (c) => c });
+
+    const outputDir = path.resolve(workspaceRoot, 'outputs');
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    const ts = Date.now();
+
+    // 横版
+    const comp = await selectComposition({
+      serveUrl: bundled, id: 'BookCard', inputProps: props,
+      browserExecutable: bundledChromeExecutable, timeoutInMilliseconds: 120000,
+    });
+    const hFile = `book_card_${ts}.png`;
+    const hPath = path.join(outputDir, hFile);
+    await renderStill({
+      composition: comp, serveUrl: bundled, output: hPath,
+      inputProps: props, imageFormat: 'png',
+      browserExecutable: bundledChromeExecutable, timeoutInMilliseconds: 120000,
+    });
+
+    // 竖版
+    const vProps = { ...props, width: 1080, height: 1920 };
+    const vComp = await selectComposition({
+      serveUrl: bundled, id: 'BookCardVertical', inputProps: vProps,
+      browserExecutable: bundledChromeExecutable, timeoutInMilliseconds: 120000,
+    });
+    const vFile = `book_card_vertical_${ts}.png`;
+    const vPath = path.join(outputDir, vFile);
+    await renderStill({
+      composition: vComp, serveUrl: bundled, output: vPath,
+      inputProps: vProps, imageFormat: 'png',
+      browserExecutable: bundledChromeExecutable, timeoutInMilliseconds: 120000,
+    });
+
+    const hRel = `outputs/${hFile}`;
+    const vRel = `outputs/${vFile}`;
+
+    // 自动保存到资产空间
+    try {
+      db.createAsset({ name: `${bookName}_书籍卡片.png`, file_path: hRel, type: 'image', size: fs.statSync(hPath).size, source: 'book-card' });
+      db.createAsset({ name: `${bookName}_书籍卡片_竖版.png`, file_path: vRel, type: 'image', size: fs.statSync(vPath).size, source: 'book-card' });
+    } catch (e) {
+      console.error('[book-card] 保存到资产空间失败:', e.message);
+    }
+
+    res.json({ outputPath: hRel, verticalOutputPath: vRel });
+  } catch (err) {
+    console.error('[book-card] 渲染失败:', err);
     res.status(500).json({ error: err.message });
   }
 });

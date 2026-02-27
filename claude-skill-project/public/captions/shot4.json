@@ -1,0 +1,23 @@
+[
+  {
+    "text": "反",
+    "startMs": 360,
+    "endMs": 500,
+    "timestampMs": 600,
+    "confidence": 0.97
+  },
+  {
+    "text": "脆",
+    "startMs": 500,
+    "endMs": 790,
+    "timestampMs": 840,
+    "confidence": 0.95
+  },
+  {
+    "text": "弱",
+    "startMs": 790,
+    "endMs": 1200,
+    "timestampMs": 1100,
+    "confidence": 0.95
+  }
+]

@@ -15,6 +15,7 @@ import { initVideoRoutes } from './routes/videos.js';
 import { initVoiceRoutes } from './routes/voice.js';
 import { initImageStyleRoutes } from './routes/imageStyles.js';
 import { initSettingsRoutes } from './routes/settings.js';
+import { initAssetRoutes } from './routes/assets.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -34,6 +35,11 @@ const basicAuth = (req, res, next) => {
 
   // 健康检查端点不需要认证
   if (req.path === '/health') {
+    return next();
+  }
+
+  // 静态资源路径不需要认证（Remotion 渲染器无法传递认证头）
+  if (req.path.startsWith('/assets') || req.path.startsWith('/outputs') || req.path.startsWith('/background-video')) {
     return next();
   }
 
@@ -97,6 +103,8 @@ app.use('/outputs', (req, res, next) => {
 app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
 app.use('/outputs', express.static(path.join(__dirname, '../../outputs')));
 
+app.use('/background-video', express.static(path.join(__dirname, '../public/background-video')));
+
 // 应用 Basic Auth 认证（API 路由需要，静态文件不需要）
 app.use(basicAuth);
 
@@ -109,6 +117,7 @@ app.use('/api/projects', initVideoRoutes(db));
 app.use('/api/voice', initVoiceRoutes());
 app.use('/api/image-styles', initImageStyleRoutes(db));
 app.use('/api/settings', initSettingsRoutes());
+app.use('/api/assets', initAssetRoutes(db));
 
 // 配置 API
 app.get('/api/config', (req, res) => {

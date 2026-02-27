@@ -1,0 +1,23 @@
+[
+  {
+    "text": "今天",
+    "startMs": 370,
+    "endMs": 490,
+    "timestampMs": 580,
+    "confidence": 0.98
+  },
+  {
+    "text": "我们",
+    "startMs": 490,
+    "endMs": 840,
+    "timestampMs": 800,
+    "confidence": 0.95
+  },
+  {
+    "text": "读",
+    "startMs": 840,
+    "endMs": 1240,
+    "timestampMs": 1200,
+    "confidence": 0.97
+  }
+]

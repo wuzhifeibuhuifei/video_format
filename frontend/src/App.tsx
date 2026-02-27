@@ -55,6 +55,38 @@ function App() {
                 画面风格
               </Link>
               <Link
+                to="/image-overlay"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/image-overlay' ? 'text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                图片叠加
+              </Link>
+              <Link
+                to="/book-reveal"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/book-reveal' ? 'text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                书籍揭示
+              </Link>
+              <Link
+                to="/book-card"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/book-card' ? 'text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                书籍卡片
+              </Link>
+              <Link
+                to="/asset-space"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/asset-space' ? 'text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                资产空间
+              </Link>
+              <Link
                 to="/settings"
                 className={`text-sm font-medium transition-colors ${
                   location.pathname === '/settings' ? 'text-white' : 'text-slate-400 hover:text-white'

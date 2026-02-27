@@ -29,3 +29,29 @@ test.tmp
 remotion-video/server/_tmp_patch.diff
 remotion-video/server/test.tmp
 
+# Claude skills
+.claude/skills/
+
+# Database
+data/projects.db
+
+# Binary archives
+*.zip
+
+# Windows artifacts
+nul
+
+# Debug files
+debug_subtitle_raw.json
+
+# Whisper.cpp binaries and models
+claude-skill-project/whisper.cpp/
+
+# Rendered video outputs
+claude-skill-project/out/
+
+# Background video assets (large)
+claude-skill-project/background-video/
+claude-skill-project/public/background-video/
+remotion-video/public/background-video/
+

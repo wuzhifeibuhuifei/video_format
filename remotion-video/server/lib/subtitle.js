@@ -247,8 +247,8 @@ export async function burnSubtitlesWithHighlights(
 
   const { exec } = await import('child_process');
   const {
-    fontSize = 46,
-    fontColor = '#FFFFFF',
+    fontSize = 40,
+    fontColor = '#f6fa00',
     bold = true,
     margin = 30,
     outlineColor = '#000000',
@@ -498,8 +498,8 @@ export async function burnSubtitlesWithHighlights(
 
 export async function burnSubtitlesToVideo(videoPath, srtPath, outputPath, options = {}) {
   const {
-    fontSize = 46,
-    fontColor = '#FFFFFF',
+    fontSize = 40,
+    fontColor = '#f6fa00',
     bold = true,
     position = 'bottom', // top, bottom
     margin = 30,

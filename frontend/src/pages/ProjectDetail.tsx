@@ -14,12 +14,16 @@ import {
   fetchProgress,
   uploadCharacterImage,
   deleteCharacterImage,
-  uploadBackground,
   deleteBackground,
-  uploadShotBackground,
+  setBackgroundFromAsset,
+  setShotBackgroundFromAsset,
   deleteShotBackground,
+  fetchAssets,
+  uploadAsset,
+  SpaceAsset,
   uploadShotHighlightSfx,
   deleteShotHighlightSfx,
+  setShotHighlightSfxFromAsset,
   addShot,
   deleteShot,
   duplicateShot,
@@ -51,11 +55,20 @@ export function ProjectDetail() {
   const characterInputRef = useRef<HTMLInputElement>(null);
   // 背景上传状态（读书解析）
   const [uploadingBg, setUploadingBg] = useState(false);
-  const bgInputRef = useRef<HTMLInputElement>(null);
+  // 资产选择弹窗状态
+  const [showBgAssetPicker, setShowBgAssetPicker] = useState(false);
+  const [bgAssets, setBgAssets] = useState<SpaceAsset[]>([]);
+  const [bgPickerTargetShotId, setBgPickerTargetShotId] = useState<number | null>(null);
+  const assetUploadRef = useRef<HTMLInputElement>(null);
   // 段落独立背景上传状态
   const [uploadingShotBg, setUploadingShotBg] = useState<number | null>(null);
   // 段落自定义重点标注音效上传状态
   const [uploadingShotSfx, setUploadingShotSfx] = useState<number | null>(null);
+  // 音效资产选择弹窗状态
+  const [showSfxAssetPicker, setShowSfxAssetPicker] = useState(false);
+  const [sfxAssets, setSfxAssets] = useState<SpaceAsset[]>([]);
+  const [sfxPickerShotId, setSfxPickerShotId] = useState<number | null>(null);
+  const sfxAssetUploadRef = useRef<HTMLInputElement>(null);
   // 配置编辑状态
   const [editingConfig, setEditingConfig] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
@@ -63,7 +76,7 @@ export function ProjectDetail() {
     aspect_ratio: '9:16',
     enable_subtitle: true,
     subtitle_font_size: 40,
-    subtitle_color: '#fbff00',
+    subtitle_color: '#f6fa00',
     enable_bgm: true,
   });
 
@@ -125,8 +138,8 @@ export function ProjectDetail() {
       setConfigForm({
         aspect_ratio: data.aspect_ratio || '9:16',
         enable_subtitle: data.config?.enable_subtitle !== false,
-        subtitle_font_size: data.config?.subtitle_font_size || 46,
-        subtitle_color: data.config?.subtitle_color || '#FFFFFF',
+        subtitle_font_size: data.config?.subtitle_font_size || 40,
+        subtitle_color: data.config?.subtitle_color || '#f6fa00',
         enable_bgm: data.config?.audio_effects?.enable_bgm !== false,
       });
     } catch (err) {
@@ -201,19 +214,6 @@ export function ProjectDetail() {
     }
   };
 
-  // 段落独立背景上传
-  const handleUploadShotBackground = async (shotId: number, file: File) => {
-    try {
-      setUploadingShotBg(shotId);
-      const updated = await uploadShotBackground(id, shotId, file);
-      setProject(updated);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : '上传段落背景失败');
-    } finally {
-      setUploadingShotBg(null);
-    }
-  };
-
   // 段落独立背景删除
   const handleDeleteShotBackground = async (shotId: number) => {
     try {
@@ -253,6 +253,48 @@ export function ProjectDetail() {
     }
   };
 
+  // 打开音效资产选择弹窗
+  const openSfxAssetPicker = async (shotId: number) => {
+    try {
+      setSfxPickerShotId(shotId);
+      const list = await fetchAssets({ type: 'audio' });
+      setSfxAssets(list);
+      setShowSfxAssetPicker(true);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '获取资产列表失败');
+    }
+  };
+
+  // 从资产空间选择音效
+  const handleSelectSfxAsset = async (asset: SpaceAsset) => {
+    const shotId = sfxPickerShotId;
+    setShowSfxAssetPicker(false);
+    if (!shotId) return;
+    try {
+      setUploadingShotSfx(shotId);
+      const updated = await setShotHighlightSfxFromAsset(id, shotId, asset.file_path);
+      setProject(updated);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '设置音效失败');
+    } finally {
+      setUploadingShotSfx(null);
+    }
+  };
+
+  // 在音效弹窗中上传新文件到资产空间
+  const handleSfxAssetUploadInModal = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const newAsset = await uploadAsset(file);
+      setSfxAssets(prev => [newAsset, ...prev]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '上传资产失败');
+    } finally {
+      if (sfxAssetUploadRef.current) sfxAssetUploadRef.current.value = '';
+    }
+  };
+
   // 角色形象上传
   const handleCharacterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -283,24 +325,6 @@ export function ProjectDetail() {
     }
   };
 
-  // 背景上传（读书解析）
-  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      setUploadingBg(true);
-      const updated = await uploadBackground(id, file);
-      setProject(updated);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : '上传背景失败');
-    } finally {
-      setUploadingBg(false);
-      if (bgInputRef.current) {
-        bgInputRef.current.value = '';
-      }
-    }
-  };
-
   // 删除背景（读书解析）
   const handleDeleteBg = async () => {
     if (!confirm('确定要删除背景素材吗？')) return;
@@ -309,6 +333,56 @@ export function ProjectDetail() {
       setProject(updated);
     } catch (err) {
       alert(err instanceof Error ? err.message : '删除背景失败');
+    }
+  };
+
+  // 打开资产选择弹窗（shotId 为 null 表示项目级背景）
+  const openBgAssetPicker = async (shotId?: number) => {
+    try {
+      console.log('openBgAssetPicker called with shotId:', shotId, typeof shotId);
+      setBgPickerTargetShotId(shotId ?? null);
+      const list = await fetchAssets();
+      setBgAssets(list.filter(a => a.type === 'image' || a.type === 'video'));
+      setShowBgAssetPicker(true);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '获取资产列表失败');
+    }
+  };
+
+  // 从资产空间选择背景
+  const handleSelectBgAsset = async (asset: SpaceAsset) => {
+    const shotId = bgPickerTargetShotId;
+    console.log('handleSelectBgAsset called, shotId:', shotId, typeof shotId, 'asset:', asset.name, asset.type);
+    setShowBgAssetPicker(false);
+    try {
+      if (shotId) {
+        setUploadingShotBg(shotId);
+        const updated = await setShotBackgroundFromAsset(id, shotId, asset.file_path);
+        setProject(updated);
+      } else {
+        setUploadingBg(true);
+        const updated = await setBackgroundFromAsset(id, asset.file_path);
+        setProject(updated);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '设置背景失败');
+    } finally {
+      setUploadingBg(false);
+      setUploadingShotBg(null);
+    }
+  };
+
+  // 在资产弹窗中上传新文件到资产空间
+  const handleAssetUploadInModal = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const newAsset = await uploadAsset(file);
+      setBgAssets(prev => [newAsset, ...prev]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '上传资产失败');
+    } finally {
+      if (assetUploadRef.current) assetUploadRef.current.value = '';
     }
   };
 
@@ -641,49 +715,25 @@ export function ProjectDetail() {
         <div className="mb-6">
           <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">背景素材</h3>
           <div className="card p-4">
-            <input
-              ref={bgInputRef}
-              type="file"
-              accept="image/*,video/mp4,video/mov,video/webm"
-              onChange={handleBgUpload}
-              className="hidden"
-            />
             {project.background_path ? (
               <div className="flex items-start gap-4">
                 <div className="relative w-32 h-20 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
                   {project.background_type === 'video' ? (
-                    <video
-                      src={`/${project.background_path}`}
-                      className="w-full h-full object-cover"
-                      muted
-                    />
+                    <video src={`/${project.background_path}`} className="w-full h-full object-cover" muted />
                   ) : (
-                    <img
-                      src={`/${project.background_path}`}
-                      alt="背景"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={`/${project.background_path}`} alt="背景" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-slate-300 mb-1">
-                    已上传{project.background_type === 'video' ? '视频' : '图片'}背景
+                    已设置{project.background_type === 'video' ? '视频' : '图片'}背景
                   </p>
-                  <p className="text-xs text-slate-500 mb-2">
-                    {project.background_path.split('/').pop()}
-                  </p>
+                  <p className="text-xs text-slate-500 mb-2">{project.background_path.split('/').pop()}</p>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => bgInputRef.current?.click()}
-                      disabled={uploadingBg}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      {uploadingBg ? '上传中...' : '更换背景'}
+                    <button onClick={() => openBgAssetPicker()} disabled={uploadingBg} className="btn btn-secondary btn-sm">
+                      {uploadingBg ? '设置中...' : '更换背景'}
                     </button>
-                    <button
-                      onClick={handleDeleteBg}
-                      className="btn btn-ghost btn-sm text-red-400 hover:text-red-300"
-                    >
+                    <button onClick={handleDeleteBg} className="btn btn-ghost btn-sm text-red-400 hover:text-red-300">
                       <IconTrash className="w-4 h-4" />
                     </button>
                   </div>
@@ -692,7 +742,7 @@ export function ProjectDetail() {
             ) : (
               <div className="flex items-center gap-4">
                 <div
-                  onClick={() => bgInputRef.current?.click()}
+                  onClick={() => openBgAssetPicker()}
                   className="w-32 h-20 rounded-lg border-2 border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors"
                 >
                   {uploadingBg ? (
@@ -702,10 +752,8 @@ export function ProjectDetail() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm text-slate-300">上传背景素材 *</p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    支持图片（jpg/png/webp）或视频（mp4/mov/webm）
-                  </p>
+                  <p className="text-sm text-slate-300">选择背景素材 *</p>
+                  <p className="text-xs text-slate-500 mt-1">从资产空间选择或上传新文件</p>
                 </div>
               </div>
             )}
@@ -794,9 +842,9 @@ export function ProjectDetail() {
             onCreateVideo={project.category !== 'book_analysis' ? () => navigate(`/project/${id}/video/${shot.id}`) : undefined}
             onDelete={() => handleDeleteShot(shot.id)}
             onDuplicate={() => handleDuplicateShot(shot.id)}
-            onUploadBackground={project.category === 'book_analysis' ? (file) => handleUploadShotBackground(shot.id, file) : undefined}
+            onUploadBackground={project.category === 'book_analysis' ? () => openBgAssetPicker(shot.id) : undefined}
             onDeleteBackground={project.category === 'book_analysis' ? () => handleDeleteShotBackground(shot.id) : undefined}
-            onUploadHighlightSfx={(file) => handleUploadShotHighlightSfx(shot.id, file)}
+            onUploadHighlightSfx={() => openSfxAssetPicker(shot.id)}
             onDeleteHighlightSfx={() => handleDeleteShotHighlightSfx(shot.id)}
             imageLoading={regeneratingShot === shot.id}
             uploading={uploadingShot === shot.id}
@@ -814,6 +862,78 @@ export function ProjectDetail() {
           {project.category === 'book_analysis' ? '添加段落' : '添加镜头'}
         </button>
       </div>
+
+      {/* 资产选择弹窗 */}
+      {showBgAssetPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowBgAssetPicker(false)}>
+          <div className="bg-slate-800 rounded-xl border border-white/10 p-6 w-full max-w-2xl max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">选择背景素材</h3>
+              <div className="flex items-center gap-3">
+                <input ref={assetUploadRef} type="file" accept="image/*,video/mp4,video/mov,video/webm" className="hidden" onChange={handleAssetUploadInModal} />
+                <button className="btn btn-secondary btn-sm" onClick={() => assetUploadRef.current?.click()}>上传新文件</button>
+                <button className="text-slate-400 hover:text-white" onClick={() => setShowBgAssetPicker(false)}>✕</button>
+              </div>
+            </div>
+            {bgAssets.length === 0 ? (
+              <p className="text-slate-400 text-center py-8">资产空间中暂无文件，请先上传</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-3">
+                {bgAssets.map(asset => (
+                  <div key={asset.id} className="cursor-pointer rounded-lg border border-white/5 hover:border-indigo-500 overflow-hidden transition-colors" onClick={() => handleSelectBgAsset(asset)}>
+                    <div className="aspect-video bg-slate-900">
+                      {asset.type === 'video' ? (
+                        <video src={`/${asset.file_path}`} className="w-full h-full object-cover" muted />
+                      ) : (
+                        <img src={`/${asset.file_path}`} className="w-full h-full object-cover" alt={asset.name} />
+                      )}
+                    </div>
+                    <div className="p-2 flex items-center justify-between">
+                      <p className="text-xs text-slate-300 truncate flex-1">{asset.name}</p>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ml-1 ${asset.type === 'video' ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                        {asset.type === 'video' ? '视频' : '图片'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 音效资产选择弹窗 */}
+      {showSfxAssetPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowSfxAssetPicker(false)}>
+          <div className="bg-slate-800 rounded-xl border border-white/10 p-6 w-full max-w-2xl max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">选择音效</h3>
+              <div className="flex items-center gap-3">
+                <input ref={sfxAssetUploadRef} type="file" accept=".mp3,.wav,.ogg,.m4a,.aac" className="hidden" onChange={handleSfxAssetUploadInModal} />
+                <button className="btn btn-secondary btn-sm" onClick={() => sfxAssetUploadRef.current?.click()}>上传音效</button>
+                <button className="text-slate-400 hover:text-white" onClick={() => setShowSfxAssetPicker(false)}>✕</button>
+              </div>
+            </div>
+            {sfxAssets.length === 0 ? (
+              <p className="text-slate-400 text-center py-8">资产空间中暂无音频文件，请先上传</p>
+            ) : (
+              <div className="space-y-2">
+                {sfxAssets.map(asset => (
+                  <div key={asset.id} className="flex items-center gap-3 p-3 rounded-lg border border-white/5 hover:border-indigo-500 cursor-pointer transition-colors" onClick={() => handleSelectSfxAsset(asset)}>
+                    <div className="w-8 h-8 rounded bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-emerald-400 text-xs">♪</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-300 truncate">{asset.name}</p>
+                    </div>
+                    <span className="text-xs text-slate-500">{(asset.size / 1024).toFixed(0)} KB</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

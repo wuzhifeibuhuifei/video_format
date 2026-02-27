@@ -4,3 +4,7 @@ export { HighlightText } from './HighlightText';
 export { BackgroundMusic } from './BackgroundMusic';
 export { Scene } from './Scene';
 export { BookAnalysisScene } from './BookAnalysisScene';
+export { ImageOverlayVideo } from './ImageOverlayVideo';
+export { BookReveal } from './BookReveal';
+export { BookCard } from './BookCard';
+export { BookCardVertical } from './BookCardVertical';

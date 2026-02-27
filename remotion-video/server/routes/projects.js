@@ -376,6 +376,28 @@ router.post('/:id/background', async (req, res) => {
   }
 });
 
+// 从资产空间设置背景
+router.post('/:id/background-from-asset', (req, res) => {
+  const projectId = parseInt(req.params.id);
+  try {
+    const project = db.getProject(projectId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    const { file_path } = req.body;
+    if (!file_path) return res.status(400).json({ error: '缺少文件路径' });
+    const ext = path.extname(file_path).toLowerCase();
+    const imageExts = ['.jpg', '.jpeg', '.png', '.webp'];
+    const videoExts = ['.mp4', '.mov', '.webm'];
+    let backgroundType;
+    if (imageExts.includes(ext)) backgroundType = 'image';
+    else if (videoExts.includes(ext)) backgroundType = 'video';
+    else return res.status(400).json({ error: `不支持的文件格式: ${ext}` });
+    db.updateProject(projectId, { background_type: backgroundType, background_path: file_path });
+    res.json(db.getProject(projectId));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 删除读书解析背景
 router.delete('/:id/background', (req, res) => {
   const projectId = parseInt(req.params.id);
@@ -469,6 +491,30 @@ router.post('/:id/shots/:shotId/background', async (req, res) => {
   }
 });
 
+// 从资产空间设置段落背景
+router.post('/:id/shots/:shotId/background-from-asset', (req, res) => {
+  const projectId = parseInt(req.params.id);
+  const shotId = parseInt(req.params.shotId);
+  console.log('[background-from-asset] projectId:', projectId, 'shotId:', shotId, 'req.params.shotId:', req.params.shotId);
+  try {
+    const project = db.getProject(projectId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    const { file_path } = req.body;
+    if (!file_path) return res.status(400).json({ error: '缺少文件路径' });
+    const ext = path.extname(file_path).toLowerCase();
+    const imageExts = ['.jpg', '.jpeg', '.png', '.webp'];
+    const videoExts = ['.mp4', '.mov', '.webm'];
+    let backgroundType;
+    if (imageExts.includes(ext)) backgroundType = 'image';
+    else if (videoExts.includes(ext)) backgroundType = 'video';
+    else return res.status(400).json({ error: `不支持的文件格式: ${ext}` });
+    db.updateShot(shotId, { background_path: file_path, background_type: backgroundType });
+    res.json(db.getProject(projectId));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 删除段落独立背景
 router.delete('/:id/shots/:shotId/background', (req, res) => {
   const projectId = parseInt(req.params.id);
@@ -552,6 +598,25 @@ router.post('/:id/shots/:shotId/highlight-sfx', async (req, res) => {
     res.json(db.getProject(projectId));
   } catch (err) {
     console.error('Shot highlight sfx upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 从资产空间设置段落重点标注音效
+router.post('/:id/shots/:shotId/highlight-sfx-from-asset', (req, res) => {
+  const projectId = parseInt(req.params.id);
+  const shotId = parseInt(req.params.shotId);
+  try {
+    const project = db.getProject(projectId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    const { file_path } = req.body;
+    if (!file_path) return res.status(400).json({ error: '缺少文件路径' });
+    const ext = path.extname(file_path).toLowerCase();
+    const audioExts = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
+    if (!audioExts.includes(ext)) return res.status(400).json({ error: `不支持的音频格式: ${ext}` });
+    db.updateShot(shotId, { highlight_sfx_path: file_path });
+    res.json(db.getProject(projectId));
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

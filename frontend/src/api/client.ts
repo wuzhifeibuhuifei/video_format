@@ -21,7 +21,7 @@ export function isAuthenticated(): boolean {
 }
 
 // 带认证的 fetch 包装
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const authHeader = getAuthHeader();
   const headers = new Headers(options.headers);
 
@@ -345,6 +345,16 @@ export async function uploadShotBackground(projectId: number, shotId: number, fi
   return res.json();
 }
 
+export async function setShotBackgroundFromAsset(projectId: number, shotId: number, filePath: string): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/background-from-asset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_path: filePath }),
+  });
+  if (!res.ok) throw new Error('设置段落背景失败');
+  return res.json();
+}
+
 export async function deleteShotBackground(projectId: number, shotId: number): Promise<Project> {
   const res = await authFetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/background`, {
     method: 'DELETE',
@@ -383,6 +393,16 @@ export async function deleteShotHighlightSfx(projectId: number, shotId: number):
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('删除重点标注音效失败');
+  return res.json();
+}
+
+export async function setShotHighlightSfxFromAsset(projectId: number, shotId: number, filePath: string): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/shots/${shotId}/highlight-sfx-from-asset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_path: filePath }),
+  });
+  if (!res.ok) throw new Error('设置音效失败');
   return res.json();
 }
 
@@ -633,6 +653,16 @@ export async function deleteBackground(projectId: number): Promise<Project> {
   return res.json();
 }
 
+export async function setBackgroundFromAsset(projectId: number, filePath: string): Promise<Project> {
+  const res = await authFetch(`${API_BASE}/projects/${projectId}/background-from-asset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file_path: filePath }),
+  });
+  if (!res.ok) throw new Error('设置背景失败');
+  return res.json();
+}
+
 // 资产相关类型
 export interface AssetInfo {
   path: string;
@@ -759,4 +789,108 @@ export async function generateRandomTheme(excludedThemes?: string[]): Promise<{
   }
   const data = await res.json();
   return data.theme;
+}
+
+// ========== 书籍揭示视频 API ==========
+export async function uploadBookCover(file: File): Promise<{ success: boolean; path: string }> {
+  const formData = new FormData();
+  formData.append('image', file);
+  const authHeader = getAuthHeader();
+  const headers: HeadersInit = {};
+  if (authHeader) headers['Authorization'] = authHeader;
+  const res = await fetch(`${API_BASE}/projects/book-reveal/upload-cover`, {
+    method: 'POST', headers, body: formData,
+  });
+  if (!res.ok) throw new Error('上传封面失败');
+  return res.json();
+}
+
+export async function generateBookCover(prompt: string): Promise<{ success: boolean; path: string }> {
+  const res = await authFetch(`${API_BASE}/projects/book-reveal/generate-cover`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!res.ok) throw new Error('生成封面失败');
+  return res.json();
+}
+
+export async function renderBookReveal(coverPath: string): Promise<{ taskId: string }> {
+  const res = await authFetch(`${API_BASE}/projects/book-reveal/render`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coverPath }),
+  });
+  if (!res.ok) throw new Error('启动渲染失败');
+  return res.json();
+}
+
+export async function fetchBookRevealProgress(taskId: string): Promise<{
+  stage: string; percent: number; message: string; outputPath?: string;
+}> {
+  const res = await authFetch(`${API_BASE}/projects/book-reveal/progress/${taskId}`);
+  if (!res.ok) throw new Error('获取进度失败');
+  return res.json();
+}
+
+// ========== 书籍卡片 API ==========
+export async function renderBookCard(
+  coverPath: string, bookName: string, subtitle?: string, backgroundPath?: string
+): Promise<{ outputPath: string; verticalOutputPath: string }> {
+  const res = await authFetch(`${API_BASE}/projects/book-card/render`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coverPath, bookName, subtitle, backgroundPath }),
+  });
+  if (!res.ok) throw new Error('书籍卡片渲染失败');
+  return res.json();
+}
+
+// ========== 资产空间 API ==========
+export interface SpaceAsset {
+  id: number; name: string; file_path: string; type: 'image' | 'video' | 'audio';
+  category: string; size: number; source: string; created_at: string;
+}
+
+export async function fetchAssets(params?: Record<string, string>): Promise<SpaceAsset[]> {
+  const query = params ? '?' + new URLSearchParams(params).toString() : '';
+  const res = await authFetch(`${API_BASE}/assets${query}`);
+  if (!res.ok) throw new Error('获取资产列表失败');
+  const data = await res.json();
+  return data.assets || [];
+}
+
+export async function uploadAsset(file: File, category?: string): Promise<SpaceAsset> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (category) formData.append('category', category);
+  const authHeader = getAuthHeader();
+  const headers: HeadersInit = {};
+  if (authHeader) headers['Authorization'] = authHeader;
+  const res = await fetch(`${API_BASE}/assets/upload`, { method: 'POST', headers, body: formData });
+  if (!res.ok) throw new Error('上传资产失败');
+  return res.json();
+}
+
+export async function renameAsset(id: number, name: string): Promise<SpaceAsset> {
+  const res = await authFetch(`${API_BASE}/assets/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (res.status === 409) throw new Error('资产名称已存在');
+  if (!res.ok) throw new Error('重命名失败');
+  return res.json();
+}
+
+export async function deleteAsset(id: number): Promise<void> {
+  const res = await authFetch(`${API_BASE}/assets/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('删除资产失败');
+}
+
+export async function fetchAssetCategories(): Promise<string[]> {
+  const res = await authFetch(`${API_BASE}/assets/categories`);
+  if (!res.ok) throw new Error('获取分类失败');
+  const data = await res.json();
+  return data.categories || [];
 }

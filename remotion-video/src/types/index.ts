@@ -37,6 +37,49 @@ export type SubtitlePosition = 'top' | 'center' | 'bottom';
 // 项目分类
 export type ProjectCategory = 'emotion' | 'book_analysis';
 
+// 图片叠加视频 Props（工具类）
+export type ImageOverlayVideoProps = {
+  videoSrc: string;           // 背景视频路径
+  imageSrc: string;           // 叠加图片路径
+  fps: number;                // 帧率
+  width: number;              // 视频宽度
+  height: number;             // 视频高度
+  durationInFrames: number;   // 总时长（帧）
+  initialScale: number;       // 图片初始缩放比例（0.5 = 50%）
+  finalScale: number;         // 放大后的最终缩放比例
+  initialX: number;           // 初始 X 位置（百分比 0-100，50=居中）
+  initialY: number;           // 初始 Y 位置（百分比 0-100，50=居中）
+  targetX: number;            // 移动目标 X 位置（百分比）
+  targetY: number;            // 移动目标 Y 位置（百分比）
+  moveStartFrame: number;     // 开始移动的帧
+  moveDurationFrames: number; // 移动动画持续帧数
+  scaleDurationFrames: number;// 放大动画持续帧数（移动结束后开始）
+  imageWidth: number;         // 图片显示宽度（px）
+  imageHeight: number;        // 图片显示高度（px）
+};
+
+// 书籍揭示视频 Props
+export type BookRevealProps = {
+  videoSrc: string;
+  imageSrc: string;
+  fps: number;
+  width: number;
+  height: number;
+  durationInFrames: number;
+};
+
+// 书籍卡片 Props
+export type BookCardProps = {
+  imageSrc: string;
+  backgroundSrc?: string;
+  bookName: string;
+  subtitle?: string;
+  fps: number;
+  width: number;
+  height: number;
+  durationInFrames: number;
+};
+
 // 视频合成 Props
 export type VideoCompositionProps = {
   shots: Shot[];
