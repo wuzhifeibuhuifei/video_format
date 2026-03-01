@@ -10,7 +10,7 @@ echo.
 :: ========================================
 :: 在这里配置你的项目绝对路径
 :: ========================================
-set "PROJECT_DIR=D:\webworkspace\video_format_demo\video_format_demo"
+set "PROJECT_DIR=D:\workspace\video_format_demo"
 
 :: 尝试自动查找：如果脚本在项目目录下，则使用脚本所在目录
 if exist "%~dp0package.json" (

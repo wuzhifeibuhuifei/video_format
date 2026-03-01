@@ -165,7 +165,8 @@ async function processRender(projectId, taskId) {
   try {
     const config = getConfig();
     const workflow = config.workflow || {};
-    const audioRoot = workflow.audio_root || 'assets/audio/generated';
+    const audioRootRel = workflow.audio_root || 'assets/audio/generated';
+    const audioRoot = path.resolve(__dirname, '..', audioRootRel);
     const videoRoot = workflow.video_root || 'outputs';
     const shotVideoRoot = 'assets/videos/projects';
 
@@ -186,7 +187,9 @@ async function processRender(projectId, taskId) {
     for (let i = 0; i < shots.length; i++) {
       const shot = shots[i];
       const shotIndex = shot.display_index || shot.index || (i + 1);
-      const audioPath = path.join(audioRoot, `project_${projectId}_shot_${shotIndex}.mp3`);
+      const audioFileName = `project_${projectId}_shot_${shotIndex}.mp3`;
+      const audioPath = path.join(audioRoot, audioFileName);
+      const audioPathRel = path.join(audioRootRel, audioFileName).replace(/\\/g, '/');
 
       const ttsProgress = Math.round((i / shots.length) * 20);
       renderJobs.set(taskId, {
@@ -226,14 +229,15 @@ async function processRender(projectId, taskId) {
         }
         // 保存字幕文件路径
         if (ttsResult.subtitlePath) {
-          db.updateShot(shot.id, { subtitle_path: ttsResult.subtitlePath });
-          console.log(`  ✓ 已保存字幕文件: ${ttsResult.subtitlePath}`);
+          const subtitlePathRel = audioPathRel.replace(/\.mp3$/i, '.srt');
+          db.updateShot(shot.id, { subtitle_path: subtitlePathRel });
+          console.log(`  ✓ 已保存字幕文件: ${subtitlePathRel}`);
         }
       } else {
         console.log(`  ○ 跳过已存在的音频: ${audioPath}`);
       }
-      audioPaths.push(audioPath);
-      db.updateShot(shot.id, { audio_path: audioPath });
+      audioPaths.push(audioPathRel);
+      db.updateShot(shot.id, { audio_path: audioPathRel });
     }
     console.log(`========== TTS 音频生成完成 ==========\n`);
 
@@ -1489,7 +1493,6 @@ router.post('/book-card/render', async (req, res) => {
       backgroundSrc: backgroundPath ? toUrl(backgroundPath) : undefined,
       fps: 30, width: 1920, height: 1080, durationInFrames: 1,
     };
-
     const entryPoint = process.env.REMOTION_PROJECT_DIR
       ? path.join(process.env.REMOTION_PROJECT_DIR, 'src/index.ts')
       : path.join(__dirname, '../../src/index.ts');

@@ -1,8 +1,16 @@
-import React from 'react';
-import { AbsoluteFill, Img } from 'remotion';
+import React, { useEffect, useState } from 'react';
+import { AbsoluteFill, Img, delayRender, continueRender } from 'remotion';
 import type { BookCardProps } from '../types';
+import { ensureFont } from '../fonts';
 
 export const BookCardVertical: React.FC<BookCardProps> = ({ imageSrc, backgroundSrc, bookName, subtitle }) => {
+  const [handle] = useState(() => delayRender('等待字体加载'));
+
+  useEffect(() => {
+    ensureFont().then(() => {
+      continueRender(handle);
+    });
+  }, [handle]);
   return (
     <AbsoluteFill
       style={{
