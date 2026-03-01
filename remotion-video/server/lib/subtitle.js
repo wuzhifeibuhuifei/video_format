@@ -350,10 +350,15 @@ export async function burnSubtitlesWithHighlights(
   };
 
   writeSrt(normalEntries, normalSrtPath);
-  // 居中字幕在标点处换行，避免超出屏幕
+  // 居中字幕在标点处换行，去掉行尾标点，避免超出屏幕
   const centerWithBreaks = centerSrtEntries.map(e => ({
     ...e,
-    text: e.text.replace(/([，。！？；、：,\.!\?;:])/g, '$1\\N'),
+    text: e.text
+      .replace(/([，。！？；、：,\.!\?;:])/g, '$1\x00')   // 标记分割点
+      .split('\x00')                                        // 按标记拆分
+      .map(seg => seg.replace(/[，。！？；、：,\.!\?;:]$/g, '')) // 去掉每段末尾标点
+      .filter(seg => seg.length > 0)                        // 过滤空段
+      .join('\\N'),                                         // 用 ASS 换行符拼接
   }));
   writeSrt(centerWithBreaks, centerSrtPath);
 
@@ -376,7 +381,7 @@ export async function burnSubtitlesWithHighlights(
     `MarginV=${margin}`,
   ].join(',');
 
-  // 居中字幕样式（Alignment=10 = SSA v4 屏幕正中）
+  // 居中字幕样式（Alignment=10 = SSA v4 编码：屏幕正中，水平居中）
   const centerStyle = [
     `Fontsize=${fontSize}`,
     `PrimaryColour=${primaryColour}`,
