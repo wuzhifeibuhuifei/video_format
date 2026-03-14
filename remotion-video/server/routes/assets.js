@@ -7,6 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(__dirname, '../../..');
 const spaceDir = path.resolve(workspaceRoot, 'assets/space');
 
+function buildStoredAssetFileName(originalName) {
+  const ext = path.extname(originalName || '').toLowerCase();
+  const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  return `${uniqueSuffix}${ext}`;
+}
+
 const router = Router();
 let db = null;
 
@@ -39,7 +45,7 @@ router.post('/upload', async (req, res) => {
     if (!file) return res.status(400).json({ error: '未上传文件' });
     if (!fs.existsSync(spaceDir)) fs.mkdirSync(spaceDir, { recursive: true });
     const ext = path.extname(file.name);
-    const fileName = `${Date.now()}_${file.name}`;
+    const fileName = buildStoredAssetFileName(file.name);
     await file.mv(path.join(spaceDir, fileName));
     const type = /\.(mp4|mov|webm|avi)$/i.test(ext) ? 'video' : /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(ext) ? 'audio' : 'image';
     const id = db.createAsset({

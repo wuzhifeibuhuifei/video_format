@@ -29,7 +29,7 @@ process.env.PATH = isLinux ? `${bundledFfmpegDir}:${process.env.PATH || ''}` : `
 import { Router } from 'express';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition, getVideoMetadata } from '@remotion/renderer';
-import { TTSClient } from '../lib/tts.js';
+import { TTSClient, generateSrtFile } from '../lib/tts.js';
 import { VideoGenerator } from '../lib/video.js';
 import { VideoPromptGenerator } from '../lib/videoPrompt.js';
 import { getConfig } from '../lib/config.js';
@@ -173,6 +173,33 @@ async function processRender(projectId, taskId) {
     const project = db.getProject(projectId);
     const shots = project.shots || [];
 
+    // ========== 0. 预处理：重点文本自动独立成句 ==========
+    console.log(`\n========== 预处理：重点文本自动独立成句 ==========`);
+    for (const shot of shots) {
+      if (!shot.highlight_text || !shot.script_text) continue;
+
+      const highlight = shot.highlight_text.trim();
+      let text = shot.script_text.trim();
+
+      // 如果文字不仅仅是重点词本身，且包含了重点词，则将其拆分为独立句子
+      if (text !== highlight && text.includes(highlight)) {
+        const { splitHighlightAsSentence } = await import('./shots.js');
+        const newText = splitHighlightAsSentence(text, highlight);
+
+        if (newText !== text) {
+          console.log(`[预处理] Shot ${shot.id} 重点词"${highlight}"已自动独立成句`);
+          console.log(`  原内容: ${text}`);
+          console.log(`  新内容: ${newText}`);
+
+          shot.script_text = newText; // 更新内存中的数据以供本次渲染使用
+          db.updateShot(shot.id, { script_text: newText }); // 持久化到数据库
+
+          // 如果此前生成过旧配音，在接下来的 TTS 环节中
+          // 检测到 script_text 变化（和 scriptTextHash 对不上），会自动触发重新生成 TTS 和 SRT
+        }
+      }
+    }
+
     // 判断项目分类
     const isBookAnalysis = project.category === 'book_analysis';
 
@@ -225,20 +252,45 @@ async function processRender(projectId, taskId) {
         if (ttsResult.subtitleTimestamps) {
           const metadata = { subtitleTimestamps: ttsResult.subtitleTimestamps, scriptTextHash: shot.script_text };
           db.updateShot(shot.id, { metadata_json: JSON.stringify(metadata) });
+          shot.metadata_json = JSON.stringify(metadata);
           console.log(`  ✓ 已保存字幕时间戳: ${ttsResult.subtitleTimestamps.length} 条`);
         }
         // 保存字幕文件路径
         if (ttsResult.subtitlePath) {
           const subtitlePathRel = audioPathRel.replace(/\.mp3$/i, '.srt');
           db.updateShot(shot.id, { subtitle_path: subtitlePathRel });
+          shot.subtitle_path = subtitlePathRel;
           console.log(`  ✓ 已保存字幕文件: ${subtitlePathRel}`);
         }
       } else {
         console.log(`  ○ 跳过已存在的音频: ${audioPath}`);
       }
+      // 音频可复用但字幕路径丢失/文件缺失时，使用已存时间戳补建 SRT
+      const expectedSubtitleRel = audioPathRel.replace(/\.mp3$/i, '.srt');
+      const expectedSubtitleAbs = audioPath.replace(/\.mp3$/i, '.srt');
+      const currentSubtitleAbs = shot.subtitle_path ? resolveAssetPath(shot.subtitle_path) : null;
+      if (!shot.subtitle_path || !currentSubtitleAbs || !fs.existsSync(currentSubtitleAbs)) {
+        try {
+          const meta = shot.metadata_json ? JSON.parse(shot.metadata_json) : {};
+          const timestamps = Array.isArray(meta.subtitleTimestamps) ? meta.subtitleTimestamps : [];
+          if (timestamps.length > 0) {
+            generateSrtFile(timestamps, expectedSubtitleAbs);
+            db.updateShot(shot.id, { subtitle_path: expectedSubtitleRel });
+            shot.subtitle_path = expectedSubtitleRel;
+            console.log(`  [subtitle-repair] Shot ${shotIndex} rebuilt subtitle: ${expectedSubtitleRel}`);
+          }
+        } catch (err) {
+          console.warn(`  [subtitle-repair] Shot ${shotIndex} failed: ${err.message}`);
+        }
+      }
+
       audioPaths.push(audioPathRel);
       db.updateShot(shot.id, { audio_path: audioPathRel });
     }
+
+    // Re-read latest snapshots so subtitle merge/burn uses updated subtitle paths
+    const refreshedProjectAfterTts = db.getProject(projectId);
+    const shotsAfterTts = refreshedProjectAfterTts?.shots || shots;
     console.log(`========== TTS 音频生成完成 ==========\n`);
 
     // 2. 生成分段视频 (20-70%) - 仅当启用 AI 视频时
@@ -247,16 +299,16 @@ async function processRender(projectId, taskId) {
       console.log(`\n========== 开始生成分段视频 ==========`);
       const videoDir = `${shotVideoRoot}/project_${projectId}`;
 
-      for (let i = 0; i < shots.length; i++) {
-        const shot = shots[i];
+      for (let i = 0; i < shotsAfterTts.length; i++) {
+        const shot = shotsAfterTts[i];
         const shotIndex = shot.display_index || shot.index || (i + 1);
         const videoPath = `${videoDir}/shot_${shotIndex}.mp4`;
 
-        const videoProgress = 20 + Math.round((i / shots.length) * 50);
+        const videoProgress = 20 + Math.round((i / shotsAfterTts.length) * 50);
         renderJobs.set(taskId, {
           stage: 'video',
           percent: videoProgress,
-          message: `生成视频 ${i + 1}/${shots.length}`,
+          message: `生成视频 ${i + 1}/${shotsAfterTts.length}`,
         });
 
         // 检查图片是否存在
@@ -322,7 +374,7 @@ async function processRender(projectId, taskId) {
     renderJobs.set(taskId, { stage: 'render', percent: 70, message: '准备渲染...' });
 
     const fps = config.remotion?.fps || 24;
-    const remotionShots = await buildRemotionShots(shots, audioPaths, shotVideoPaths, fps, enableAiVideo, isBookAnalysis, project);
+    const remotionShots = await buildRemotionShots(shotsAfterTts, audioPaths, shotVideoPaths, fps, enableAiVideo, isBookAnalysis, project);
 
     console.log(`\n========== Remotion 场景数据 ==========`);
     console.log(`总场景数: ${remotionShots.length}`);
@@ -369,7 +421,7 @@ async function processRender(projectId, taskId) {
 
     for (let i = 0; i < remotionShots.length; i++) {
       const rShot = remotionShots[i];
-      const shot = shots[i];
+      const shot = shotsAfterTts[i];
       const shotIndex = rShot.index;
 
       // 读书解析模式：跳过无文字且无独立背景的段落（与 VideoComposition activeShots 一致）
@@ -426,7 +478,7 @@ async function processRender(projectId, taskId) {
       const defaultSfxPath = sfxRelative ? resolveAssetPath(sfxRelative) : null;
 
       // 为每个 shot 解析自定义音效的绝对路径
-      const shotsWithSfx = shots.map(s => ({
+      const shotsWithSfx = shotsAfterTts.map(s => ({
         ...s,
         _resolvedSfxPath: s.highlight_sfx_path ? resolveAssetPath(s.highlight_sfx_path) : null,
       }));
@@ -1382,14 +1434,17 @@ router.post('/book-reveal/upload-cover', async (req, res) => {
 
 router.post('/book-reveal/generate-cover', async (req, res) => {
   try {
-    const { prompt } = req.body;
+    const { prompt, width, height } = req.body;
     if (!prompt) return res.status(400).json({ error: '缺少 prompt' });
     if (!fs.existsSync(bookRevealDir)) fs.mkdirSync(bookRevealDir, { recursive: true });
     const { ImageGenerator } = await import('../lib/image.js');
     const generator = new ImageGenerator();
     const fileName = `cover_ai_${Date.now()}.png`;
     const filePath = path.join(bookRevealDir, fileName);
-    await generator.generate(prompt, filePath, { width: 1440, height: 2560 });
+    // doubao-seedream-4-5 支持的 3:4 高分辨率预设：864x1152
+    const imgWidth = width || 864;
+    const imgHeight = height || 1152;
+    await generator.generate(prompt, filePath, { width: imgWidth, height: imgHeight, highQuality: true });
     const relativePath = `assets/book-reveal/${fileName}`;
     res.json({ success: true, path: relativePath });
   } catch (err) {

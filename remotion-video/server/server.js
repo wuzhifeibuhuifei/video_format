@@ -72,6 +72,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(fileUpload({
   limits: { fileSize: 200 * 1024 * 1024 }, // 200MB（支持视频背景上传）
   abortOnLimit: true,
+  defParamCharset: 'utf8',
+  uriDecodeFileNames: true,
 }));
 
 // 静态文件服务 - 需要在 Auth 之前，因为播放器无法传递认证信息

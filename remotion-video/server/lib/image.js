@@ -40,6 +40,11 @@ export class ImageGenerator {
       watermark: watermark,
     };
 
+    // 高分辨率模式（doubao-seedream-4-5 支持）
+    if (options.highQuality) {
+      requestBody.high_aes_quality_optimize = 1;
+    }
+
     // 如果有参考图片，添加到请求中
     if (referenceImagePath && fs.existsSync(referenceImagePath)) {
       const imageBuffer = fs.readFileSync(referenceImagePath);

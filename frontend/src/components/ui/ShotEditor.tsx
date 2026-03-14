@@ -56,10 +56,17 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
     setImageLoadAttempted(false);
   }, [shot.id, shot.image_path]);
 
-  // 当 shot 的 highlight_sfx_path 在编辑期间被外部更新（上传/删除）时，同步到 editData
+  // 当 shot 的字段在编辑期间被外部更新时，同步到 editData
   useEffect(() => {
     setEditData(prev => ({ ...prev, highlight_sfx_path: shot.highlight_sfx_path }));
   }, [shot.highlight_sfx_path]);
+
+  // 当服务端返回更新后的 script_text（如重点标注自动拆句）时，同步到 editData
+  useEffect(() => {
+    if (!editing) {
+      setEditData(prev => ({ ...prev, script_text: shot.script_text }));
+    }
+  }, [shot.script_text, editing]);
 
   const handleSave = () => {
     onSave(editData);

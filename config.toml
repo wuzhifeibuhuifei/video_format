@@ -225,8 +225,8 @@ model_endpoint = "doubao-seedream-4-5-251128"
 
 # === CVProcess API 配置（旧版方式）===
 api_url = "https://visual.volcengineapi.com"
-access_key = ""
-secret_key = ""
+access_key = "AKLTMDNlY2UxY2IzMTYwNGFlN2I4MWM2NmExZmQyODkyMTc"
+secret_key = "Tmpkak56SXlOelZsWVdWak5EZ3laV0U1TlRaa1pEVXpOMkpsWldFMVl6SQ=="
 # 模型版本: general_v2.0, general_v2.0_L, anime_v1.3 等
 model_version = "general_v2.0_L"
 
@@ -240,3 +240,10 @@ seed = -1
 ddim_steps = 25
 # 是否添加水印
 watermark = false
+
+[jimeng]
+# 即梦文生图 API 配置
+# 文档: https://www.volcengine.com/docs/85621/1616429
+enable = true
+access_key = "AKLTMDNlY2UxY2IzMTYwNGFlN2I4MWM2NmExZmQyODkyMTc"
+secret_key = "Tmpkak56SXlOelZsWVdWak5EZ3laV0U1TlRaa1pEVXpOMkpsWldFMVl6SQ=="

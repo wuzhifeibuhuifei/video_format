@@ -82,6 +82,11 @@ export function ProjectDetail() {
 
   const id = projectId ? parseInt(projectId, 10) : 0;
 
+  const getAssetDisplayName = (filePath?: string | null) => {
+    if (!filePath) return '';
+    return bgAssets.find((asset) => asset.file_path === filePath)?.name || filePath.split('/').pop() || filePath;
+  };
+
   useEffect(() => {
     loadProject();
   }, [projectId]);
@@ -728,7 +733,7 @@ export function ProjectDetail() {
                   <p className="text-sm text-slate-300 mb-1">
                     已设置{project.background_type === 'video' ? '视频' : '图片'}背景
                   </p>
-                  <p className="text-xs text-slate-500 mb-2">{project.background_path.split('/').pop()}</p>
+                  <p className="text-xs text-slate-500 mb-2">{getAssetDisplayName(project.background_path)}</p>
                   <div className="flex gap-2">
                     <button onClick={() => openBgAssetPicker()} disabled={uploadingBg} className="btn btn-secondary btn-sm">
                       {uploadingBg ? '设置中...' : '更换背景'}
