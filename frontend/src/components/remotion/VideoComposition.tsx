@@ -127,7 +127,6 @@ export const VideoComposition: React.FC<VideoCompositionProps> = ({
                   subtitleFontSize={subtitleFontSize}
                   subtitleStrokeWidth={subtitleStrokeWidth}
                   subtitleColor={subtitleColor}
-                  highlightSfxUrl={highlightSfxUrl}
                 />
               </TransitionSeries.Sequence>
               {index < activeShots.length - 1 && (

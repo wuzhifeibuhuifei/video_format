@@ -21,7 +21,6 @@ import {
   fetchAssets,
   uploadAsset,
   SpaceAsset,
-  uploadShotHighlightSfx,
   deleteShotHighlightSfx,
   setShotHighlightSfxFromAsset,
   addShot,
@@ -229,19 +228,6 @@ export function ProjectDetail() {
       alert(err instanceof Error ? err.message : '删除段落背景失败');
     } finally {
       setUploadingShotBg(null);
-    }
-  };
-
-  // 段落自定义重点标注音效上传
-  const handleUploadShotHighlightSfx = async (shotId: number, file: File) => {
-    try {
-      setUploadingShotSfx(shotId);
-      const updated = await uploadShotHighlightSfx(id, shotId, file);
-      setProject(updated);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : '上传重点标注音效失败');
-    } finally {
-      setUploadingShotSfx(null);
     }
   };
 
@@ -545,22 +531,20 @@ export function ProjectDetail() {
                 <button
                   type="button"
                   onClick={() => setConfigForm({ ...configForm, enable_subtitle: true })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    configForm.enable_subtitle
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${configForm.enable_subtitle
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-700 text-slate-400'
+                    }`}
                 >
                   显示
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfigForm({ ...configForm, enable_subtitle: false })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    !configForm.enable_subtitle
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${!configForm.enable_subtitle
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-700 text-slate-400'
+                    }`}
                 >
                   隐藏
                 </button>
@@ -608,22 +592,20 @@ export function ProjectDetail() {
                 <button
                   type="button"
                   onClick={() => setConfigForm({ ...configForm, enable_bgm: true })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    configForm.enable_bgm
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${configForm.enable_bgm
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-700 text-slate-400'
+                    }`}
                 >
                   开启
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfigForm({ ...configForm, enable_bgm: false })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    !configForm.enable_bgm
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${!configForm.enable_bgm
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-slate-700 text-slate-400'
+                    }`}
                 >
                   关闭
                 </button>
@@ -768,68 +750,68 @@ export function ProjectDetail() {
 
       {/* 角色形象（仅情感模式） */}
       {project.category !== 'book_analysis' && (
-      <div className="mb-6">
-        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">角色形象</h3>
-        <div className="card p-4">
-          <input
-            ref={characterInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleCharacterUpload}
-            className="hidden"
-          />
-          {project.character_image ? (
-            <div className="flex items-start gap-4">
-              <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
-                <img
-                  src={`/${project.character_image}`}
-                  alt="角色形象"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-slate-300 mb-2">
-                  已设置角色形象，生成图片时将使用此形象作为参考
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => characterInputRef.current?.click()}
-                    disabled={uploadingCharacter}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    {uploadingCharacter ? '上传中...' : '更换形象'}
-                  </button>
-                  <button
-                    onClick={handleDeleteCharacter}
-                    className="btn btn-ghost btn-sm text-red-400 hover:text-red-300"
-                  >
-                    <IconTrash className="w-4 h-4" />
-                  </button>
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">角色形象</h3>
+          <div className="card p-4">
+            <input
+              ref={characterInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCharacterUpload}
+              className="hidden"
+            />
+            {project.character_image ? (
+              <div className="flex items-start gap-4">
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
+                  <img
+                    src={`/${project.character_image}`}
+                    alt="角色形象"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-slate-300 mb-2">
+                    已设置角色形象，生成图片时将使用此形象作为参考
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => characterInputRef.current?.click()}
+                      disabled={uploadingCharacter}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      {uploadingCharacter ? '上传中...' : '更换形象'}
+                    </button>
+                    <button
+                      onClick={handleDeleteCharacter}
+                      className="btn btn-ghost btn-sm text-red-400 hover:text-red-300"
+                    >
+                      <IconTrash className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <div
-                onClick={() => characterInputRef.current?.click()}
-                className="w-24 h-24 rounded-lg border-2 border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors"
-              >
-                {uploadingCharacter ? (
-                  <IconSpinner className="w-6 h-6 text-slate-400" />
-                ) : (
-                  <IconPlus className="w-6 h-6 text-slate-400" />
-                )}
+            ) : (
+              <div className="flex items-center gap-4">
+                <div
+                  onClick={() => characterInputRef.current?.click()}
+                  className="w-24 h-24 rounded-lg border-2 border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-indigo-500 transition-colors"
+                >
+                  {uploadingCharacter ? (
+                    <IconSpinner className="w-6 h-6 text-slate-400" />
+                  ) : (
+                    <IconPlus className="w-6 h-6 text-slate-400" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-300">添加角色形象（可选）</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    上传角色形象后，生成的所有图片将保持角色一致性
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-slate-300">添加角色形象（可选）</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  上传角色形象后，生成的所有图片将保持角色一致性
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       {/* 镜头/段落列表 */}

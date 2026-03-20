@@ -34,7 +34,7 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
-  const [bgVersion, setBgVersion] = useState(Date.now());
+  const [bgVersion] = useState(Date.now());
 
   // 使用 useMemo 和 shot.image_path 作为依赖，添加缓存破坏参数
   const imageUrl = useMemo(() => {
@@ -121,69 +121,69 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
       <div className="flex gap-4">
         {/* 图片预览 - 读书解析模式下隐藏 */}
         {!isBookAnalysis && (
-        <div className="relative w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-slate-700">
-          <img
-            src={imageUrl}
-            alt={`镜头 ${shot.display_index}`}
-            className={`w-full h-full object-cover transition-opacity ${imageExists ? 'cursor-pointer hover:opacity-80' : ''}`}
-            onClick={() => imageExists && setShowLightbox(true)}
-            onError={(e) => {
-              // 只有在真的有图片路径但加载失败时才显示占位符
-              if (hasImagePath && !imageLoadAttempted) {
-                setImageExists(false);
-                setImageLoadAttempted(true);
-                (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23334155" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%2394a3b8" font-size="12">无图片</text></svg>';
-              }
-            }}
-            onLoad={() => {
-              // 只有在第一次尝试加载且成功时才标记为可点击
-              if (hasImagePath && !imageLoadAttempted) {
-                setImageLoadAttempted(true);
-                setImageExists(true);
-              }
-            }}
-          />
-          {/* 重新生成按钮 - 右下角 */}
-          {onRegenerateImage && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRegenerateImage();
+          <div className="relative w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-slate-700">
+            <img
+              src={imageUrl}
+              alt={`镜头 ${shot.display_index}`}
+              className={`w-full h-full object-cover transition-opacity ${imageExists ? 'cursor-pointer hover:opacity-80' : ''}`}
+              onClick={() => imageExists && setShowLightbox(true)}
+              onError={(e) => {
+                // 只有在真的有图片路径但加载失败时才显示占位符
+                if (hasImagePath && !imageLoadAttempted) {
+                  setImageExists(false);
+                  setImageLoadAttempted(true);
+                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23334155" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%2394a3b8" font-size="12">无图片</text></svg>';
+                }
               }}
-              disabled={imageLoading || uploading}
-              className="absolute bottom-1 right-1 p-1.5 bg-black/60 rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
-              title="重新生成图片"
-            >
-              <IconRefresh className={`w-4 h-4 ${imageLoading ? 'animate-spin' : ''}`} />
-            </button>
-          )}
-          {/* 上传按钮 - 左下角，悬停时显示 */}
-          {onUploadImage && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleUploadClick();
+              onLoad={() => {
+                // 只有在第一次尝试加载且成功时才标记为可点击
+                if (hasImagePath && !imageLoadAttempted) {
+                  setImageLoadAttempted(true);
+                  setImageExists(true);
+                }
               }}
-              disabled={uploading || imageLoading}
-              className="absolute bottom-1 left-1 p-1.5 bg-black/60 rounded-md hover:bg-black/80 transition-colors disabled:opacity-50 opacity-0 hover:opacity-100"
-              title="上传图片"
-            >
-              {uploading ? (
-                <IconSpinner className="w-4 h-4 text-white" />
-              ) : (
-                <IconUpload className="w-4 h-4 text-white" />
-              )}
-            </button>
-          )}
-          {/* 隐藏的文件输入 */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
+            />
+            {/* 重新生成按钮 - 右下角 */}
+            {onRegenerateImage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRegenerateImage();
+                }}
+                disabled={imageLoading || uploading}
+                className="absolute bottom-1 right-1 p-1.5 bg-black/60 rounded-md hover:bg-black/80 transition-colors disabled:opacity-50"
+                title="重新生成图片"
+              >
+                <IconRefresh className={`w-4 h-4 ${imageLoading ? 'animate-spin' : ''}`} />
+              </button>
+            )}
+            {/* 上传按钮 - 左下角，悬停时显示 */}
+            {onUploadImage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUploadClick();
+                }}
+                disabled={uploading || imageLoading}
+                className="absolute bottom-1 left-1 p-1.5 bg-black/60 rounded-md hover:bg-black/80 transition-colors disabled:opacity-50 opacity-0 hover:opacity-100"
+                title="上传图片"
+              >
+                {uploading ? (
+                  <IconSpinner className="w-4 h-4 text-white" />
+                ) : (
+                  <IconUpload className="w-4 h-4 text-white" />
+                )}
+              </button>
+            )}
+            {/* 隐藏的文件输入 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
         )}
 
         {/* 内容区 */}
@@ -230,15 +230,15 @@ export function ShotEditor({ shot, onSave, onRegenerateImage, onUploadImage, onC
                 />
               </div>
               {!isBookAnalysis && (
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">图片提示词</label>
-                <textarea
-                  value={editData.image_prompt}
-                  onChange={(e) => setEditData({ ...editData, image_prompt: e.target.value })}
-                  className="input text-sm min-h-[60px] resize-y"
-                  placeholder="输入图片生成提示词..."
-                />
-              </div>
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1">图片提示词</label>
+                  <textarea
+                    value={editData.image_prompt}
+                    onChange={(e) => setEditData({ ...editData, image_prompt: e.target.value })}
+                    className="input text-sm min-h-[60px] resize-y"
+                    placeholder="输入图片生成提示词..."
+                  />
+                </div>
               )}
               <div>
                 <label className="text-xs text-slate-400 block mb-1">重点标注文字</label>

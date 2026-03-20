@@ -23,9 +23,8 @@ export function BookCardPage() {
   const [imageAssets, setImageAssets] = useState<SpaceAsset[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const isDev = import.meta.env.DEV;
-  const backendUrl = isDev ? 'http://127.0.0.1:3001' : '';
-  const toUrl = (p: string | null) => !p ? null : p.startsWith('http') ? p : `${backendUrl}/${p}`;
+  // 生产环境和开发环境均使用相对路径（开发环境由 Vite proxy 处理）
+  const toUrl = (p: string | null) => !p ? null : p.startsWith('http') ? p : `/${p}`;
   const coverUrl = toUrl(coverPath);
   const bgUrl = toUrl(backgroundPath);
   const imageUrl = toUrl(outputPath);
@@ -233,7 +232,7 @@ export function BookCardPage() {
                     onClick={() => selectAsset(asset)}
                   >
                     <div className="aspect-video bg-slate-900">
-                      <img src={`${backendUrl}/${asset.file_path}`} className="w-full h-full object-cover" alt={asset.name} />
+                      <img src={`/${asset.file_path}`} className="w-full h-full object-cover" alt={asset.name} />
                     </div>
                     <p className="text-xs text-slate-300 p-2 truncate">{asset.name}</p>
                   </div>

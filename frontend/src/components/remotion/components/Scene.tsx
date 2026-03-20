@@ -17,7 +17,7 @@ type SceneProps = {
   subtitleFontSize: number;
   subtitleStrokeWidth: number;
   subtitleColor: string;
-  highlightSfxUrl?: string;
+
 };
 
 export const Scene: React.FC<SceneProps> = ({
@@ -32,7 +32,7 @@ export const Scene: React.FC<SceneProps> = ({
   subtitleFontSize,
   subtitleStrokeWidth,
   subtitleColor,
-  highlightSfxUrl,
+
 }) => {
   return (
     <AbsoluteFill>

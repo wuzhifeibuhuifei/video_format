@@ -109,11 +109,8 @@ export function BookRevealPage() {
     }
   };
 
-  // 开发环境使用完整后端地址，生产环境使用相对路径
-  const isDev = import.meta.env.DEV;
-  const backendUrl = isDev ? 'http://127.0.0.1:3001' : '';
-  const coverUrl = coverPath?.startsWith('http') ? coverPath : (coverPath ? `${backendUrl}/${coverPath}` : null);
-  const videoUrl = outputPath?.startsWith('http') ? outputPath : (outputPath ? `${backendUrl}/${outputPath}` : null);
+  const coverUrl = coverPath?.startsWith('http') ? coverPath : (coverPath ? `/${coverPath}` : null);
+  const videoUrl = outputPath?.startsWith('http') ? outputPath : (outputPath ? `/${outputPath}` : null);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -232,7 +229,7 @@ export function BookRevealPage() {
                     onClick={() => selectAsset(asset)}
                   >
                     <div className="aspect-video bg-slate-900">
-                      <img src={`${backendUrl}/${asset.file_path}`} className="w-full h-full object-cover" alt={asset.name} />
+                      <img src={`/${asset.file_path}`} className="w-full h-full object-cover" alt={asset.name} />
                     </div>
                     <p className="text-xs text-slate-300 p-2 truncate">{asset.name}</p>
                   </div>

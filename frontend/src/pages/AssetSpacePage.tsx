@@ -20,9 +20,6 @@ export function AssetSpacePage() {
   const [editName, setEditName] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const isDev = import.meta.env.DEV;
-  const backendUrl = isDev ? 'http://127.0.0.1:3001' : '';
-
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -135,14 +132,14 @@ export function AssetSpacePage() {
             <div key={asset.id} className="card group relative overflow-hidden rounded-lg border border-white/5">
               <div className="aspect-video bg-slate-800 flex items-center justify-center overflow-hidden">
                 {asset.type === 'video' ? (
-                  <video src={`${backendUrl}/${asset.file_path}`} className="w-full h-full object-cover" muted preload="metadata" />
+                  <video src={`/${asset.file_path}`} className="w-full h-full object-cover" muted preload="metadata" />
                 ) : asset.type === 'audio' ? (
                   <div className="flex flex-col items-center justify-center gap-2">
                     <span className="text-3xl text-emerald-400">♪</span>
                     <span className="text-xs text-slate-400 truncate max-w-[80%]">{asset.name}</span>
                   </div>
                 ) : (
-                  <img src={`${backendUrl}/${asset.file_path}`} className="w-full h-full object-cover" alt={asset.name} />
+                  <img src={`/${asset.file_path}`} className="w-full h-full object-cover" alt={asset.name} />
                 )}
               </div>
               <div className="p-3">
@@ -170,7 +167,7 @@ export function AssetSpacePage() {
               </div>
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                 <a
-                  href={`${backendUrl}/${asset.file_path}`}
+                  href={`/${asset.file_path}`}
                   download={asset.name}
                   className="p-1.5 bg-indigo-500/80 hover:bg-indigo-500 rounded-lg text-white text-xs"
                 >
