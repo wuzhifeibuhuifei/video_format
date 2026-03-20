@@ -55,3 +55,8 @@ claude-skill-project/background-video/
 claude-skill-project/public/background-video/
 remotion-video/public/background-video/
 
+# Skill related files
+*skill*/
+*skills*/
+.codex/
+.codex-home-test/
