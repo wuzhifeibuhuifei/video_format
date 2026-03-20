@@ -60,3 +60,10 @@ remotion-video/public/background-video/
 *skills*/
 .codex/
 .codex-home-test/
+
+# Temporary, log, and resource files
+*_tmp_*
+*.log
+s.json
+day-video/
+.nodejs/
